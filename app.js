@@ -5,16 +5,20 @@
  * (com.jeffrey.halo1timers), rebuilt from the original APK's assets.
  *
  * Model: a continuous 60-second cycle. Overshield ("power-ups") spawns
- * every 60s; rockets spawn every 120s. The end-of-cycle callout therefore
- * alternates power-ups, rockets, power-ups, rockets... starting with
- * power-ups on the first cycle.
+ * every 60s; rockets spawn every 120s, so the end-of-cycle callout
+ * alternates power-ups, rockets, power-ups... starting with power-ups.
+ *
+ * Audio: short number clips (~0.9s) call 50/40/30/20. The "rockets" and
+ * "power-ups" clips are ~10s recordings of the final countdown + item
+ * name, so they start at 10s remaining. Spawn.mp3 is the spawn beep.
  */
 
 const CYCLE = 60;                          // seconds per spawn cycle
-const STORE = 'halo1timer.settings.v1';
+const STORE = 'halo1timer.settings.v2';
 const RING_R = 88;
 const C = 2 * Math.PI * RING_R;            // ring circumference
-const SCHEDULE = [50, 40, 30, 20];         // seconds-remaining number callouts
+const NUMBER_CUES = [50, 40, 30, 20];      // seconds-remaining number callouts
+const FINAL_AT = 10;                       // the ~10s countdown clip starts here
 
 // Voice packs (recorded clips lifted from the original APK).
 const VOICES = {
@@ -49,7 +53,13 @@ const VOICES = {
 
 const SPAWN_SOUND = 'audio/Spawn.mp3';
 
-let settings = { voice: 'american_female', keepAwake: true };
+const DEFAULTS = {
+  voice: 'american_female',
+  keepAwake: true,
+  cues: { n50: true, n40: true, n30: true, n20: true, final: true },
+};
+
+let settings = JSON.parse(JSON.stringify(DEFAULTS));
 let running = false;
 let cycleEnd = 0;                          // ms timestamp the current cycle reaches 0
 let cyclesDone = 0;                        // completed cycles
@@ -66,8 +76,12 @@ const itemForCycle = (n) => (n % 2 === 1 ? 'powerups' : 'rockets');
 /* ---------- persistence ---------- */
 function load() {
   try {
-    const s = localStorage.getItem(STORE);
-    if (s) settings = { ...settings, ...JSON.parse(s) };
+    const raw = localStorage.getItem(STORE);
+    if (!raw) return;
+    const p = JSON.parse(raw);
+    if (p.voice) settings.voice = p.voice;
+    if (typeof p.keepAwake === 'boolean') settings.keepAwake = p.keepAwake;
+    if (p.cues) settings.cues = { ...settings.cues, ...p.cues };
   } catch (e) { /* ignore */ }
 }
 function save() {
@@ -162,19 +176,27 @@ function tick() {
     while (cycleEnd <= now) { cyclesDone += 1; cycleEnd += CYCLE * 1000; }
     remaining = (cycleEnd - now) / 1000;
     fired.clear();
-    playClip(itemForCycle(cyclesDone));
-    playClip('spawn');
+    if (settings.cues.final) play(SPAWN_SOUND);   // spawn beep
     render();
     return;
   }
 
   const secsLeft = Math.ceil(remaining);
-  for (const at of SCHEDULE) {
-    if (secsLeft <= at && !fired.has(at)) {
+
+  for (const at of NUMBER_CUES) {
+    // The window (at-10, at] keeps a single mark from re-firing and avoids
+    // dumping every missed cue at once after the tab was throttled.
+    if (secsLeft <= at && secsLeft > at - 10 && !fired.has(at)) {
       fired.add(at);
-      playClip('n' + at);
+      if (settings.cues['n' + at]) playClip('n' + at);
     }
   }
+
+  if (secsLeft <= FINAL_AT && secsLeft > 0 && !fired.has('final')) {
+    fired.add('final');
+    if (settings.cues.final) playClip(itemForCycle(cyclesDone + 1));
+  }
+
   render();
 }
 
@@ -198,7 +220,7 @@ function render() {
   if (running) $('phase').textContent = 'NEXT: ' + (nextItem === 'rockets' ? 'ROCKETS' : 'POWER-UPS');
   else $('phase').textContent = idle ? 'READY' : 'PAUSED';
 
-  document.querySelector('.dial').classList.toggle('warning', running && remaining <= 10 && remaining > 0);
+  document.querySelector('.dial').classList.toggle('warning', running && remaining <= FINAL_AT && remaining > 0);
 
   const btn = $('start-btn');
   btn.textContent = running ? 'STOP' : (idle ? 'START' : 'RESUME');
@@ -212,6 +234,14 @@ function init() {
   $('opt-awake').checked = settings.keepAwake;
   const voiceRadio = document.querySelector(`input[name="voice"][value="${settings.voice}"]`);
   if (voiceRadio) voiceRadio.checked = true;
+  ['n50', 'n40', 'n30', 'n20', 'final'].forEach((k) => {
+    const el = $('cue-' + k);
+    el.checked = settings.cues[k] !== false;
+    el.addEventListener('change', (e) => {
+      settings.cues[k] = e.target.checked;
+      save();
+    });
+  });
 
   $('ring').style.strokeDasharray = String(C);
   render();

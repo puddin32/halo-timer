@@ -225,7 +225,7 @@ body {
   font-size: 14px;
 }
 
-.voices {
+.opt-group {
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -235,7 +235,7 @@ body {
   border-radius: 10px;
 }
 
-.voices legend {
+.opt-group legend {
   padding: 0 6px;
   font-size: 11px;
   letter-spacing: 2px;
