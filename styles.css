@@ -8,6 +8,8 @@
   --cyan: #34d6e8;
   --cyan-soft: #5fe8f5;
   --warn: #ff6b4a;
+  --rockets: #d56467;
+  --powerups: #5abe8a;
 }
 
 * { box-sizing: border-box; }
@@ -81,9 +83,26 @@ body {
   transition: stroke-dashoffset 0.25s linear;
 }
 
-.dial.warning .ring-progress {
-  stroke: var(--warn);
-  filter: drop-shadow(0 0 6px var(--warn));
+.dial.cycle-rockets .ring-progress {
+  stroke: var(--rockets);
+  filter: drop-shadow(0 0 6px var(--rockets));
+}
+
+.dial.cycle-powerups .ring-progress {
+  stroke: var(--powerups);
+  filter: drop-shadow(0 0 6px var(--powerups));
+}
+
+.dial-icon {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 62%;
+  max-height: 48%;
+  object-fit: contain;
+  opacity: 0.4;
+  pointer-events: none;
 }
 
 .dial-center {
@@ -101,10 +120,21 @@ body {
   font-weight: 800;
   line-height: 1;
   font-variant-numeric: tabular-nums;
-  text-shadow: 0 0 18px rgba(52, 214, 232, 0.45);
 }
 
-.dial.warning .time { text-shadow: 0 0 18px rgba(255, 107, 74, 0.5); }
+.dial.cycle-rockets .time {
+  color: var(--rockets);
+  text-shadow: 0 0 18px var(--rockets);
+}
+
+.dial.cycle-powerups .time {
+  color: var(--powerups);
+  text-shadow: 0 0 18px var(--powerups);
+}
+
+.dial.warning .time { animation: pulse 1s ease-in-out infinite; }
+
+@keyframes pulse { 50% { opacity: 0.5; } }
 
 .phase {
   font-size: 11px;
@@ -147,51 +177,6 @@ body {
   background: var(--panel);
   color: var(--text);
 }
-
-.items {
-  display: flex;
-  gap: 16px;
-  width: min(80vw, 340px);
-}
-
-.item {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  padding: 12px 8px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: var(--panel);
-  opacity: 0.5;
-  transition: opacity 0.2s, box-shadow 0.2s, border-color 0.2s;
-}
-
-.item.next {
-  opacity: 1;
-  border-color: var(--cyan);
-  box-shadow: 0 0 16px rgba(52, 214, 232, 0.25);
-}
-
-.item img {
-  height: 34px;
-  width: auto;
-}
-
-.item-name {
-  font-size: 10px;
-  letter-spacing: 2px;
-  color: var(--muted);
-}
-
-.item-time {
-  font-size: 22px;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-
-.item.next .item-time { color: var(--cyan); }
 
 .dialog {
   width: min(380px, 92vw);
