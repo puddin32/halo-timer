@@ -66,6 +66,7 @@ let cyclesDone = 0;                        // completed cycles
 let remaining = CYCLE;                     // seconds left in the current cycle
 const fired = new Set();
 let wakeLock = null;
+let shownItem = null;                      // current item shown on the dial
 const audioCache = {};
 
 const $ = (id) => document.getElementById(id);
@@ -86,12 +87,6 @@ function load() {
 }
 function save() {
   try { localStorage.setItem(STORE, JSON.stringify(settings)); } catch (e) { /* ignore */ }
-}
-
-/* ---------- formatting ---------- */
-function fmtClock(sec) {
-  sec = Math.max(0, Math.ceil(sec));
-  return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0');
 }
 
 /* ---------- audio ---------- */
@@ -209,18 +204,19 @@ function render() {
   $('ring').style.strokeDashoffset = String(C * (1 - frac));
 
   const nextItem = itemForCycle(cyclesDone + 1);
-  const rocketsLeft = (nextItem === 'rockets') ? osLeft : osLeft + CYCLE;
-  $('rockets-time').textContent = fmtClock(rocketsLeft);
-  $('powerups-time').textContent = fmtClock(osLeft);
-
-  $('item-rockets').classList.toggle('next', running && nextItem === 'rockets');
-  $('item-powerups').classList.toggle('next', running && nextItem === 'powerups');
+  const dial = document.querySelector('.dial');
+  if (nextItem !== shownItem) {
+    shownItem = nextItem;
+    $('dial-icon').src = nextItem === 'rockets' ? 'img/rockets.png' : 'img/powerups.png';
+    dial.classList.toggle('cycle-rockets', nextItem === 'rockets');
+    dial.classList.toggle('cycle-powerups', nextItem === 'powerups');
+  }
 
   const idle = !running && cyclesDone === 0 && remaining >= CYCLE;
-  if (running) $('phase').textContent = 'NEXT: ' + (nextItem === 'rockets' ? 'ROCKETS' : 'POWER-UPS');
+  if (running) $('phase').textContent = nextItem === 'rockets' ? 'ROCKETS' : 'POWER-UPS';
   else $('phase').textContent = idle ? 'READY' : 'PAUSED';
 
-  document.querySelector('.dial').classList.toggle('warning', running && remaining <= FINAL_AT && remaining > 0);
+  dial.classList.toggle('warning', running && remaining <= FINAL_AT && remaining > 0);
 
   const btn = $('start-btn');
   btn.textContent = running ? 'STOP' : (idle ? 'START' : 'RESUME');
