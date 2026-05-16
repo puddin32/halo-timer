@@ -2,14 +2,19 @@
 
 /*
  * Faithful web recreation of the "Timer for Halo 1" Android app
- * (com.jeffrey.halo1timers). A single 60-second respawn timer with
- * recorded voice callouts, rebuilt from the original APK's assets.
+ * (com.jeffrey.halo1timers), rebuilt from the original APK's assets.
+ *
+ * Model: a continuous 60-second cycle. Overshield ("power-ups") spawns
+ * every 60s; rockets spawn every 120s. The end-of-cycle callout therefore
+ * alternates power-ups, rockets, power-ups, rockets... starting with
+ * power-ups on the first cycle.
  */
 
-const DURATION = 60;                       // seconds — the Halo 1 respawn cycle
+const CYCLE = 60;                          // seconds per spawn cycle
 const STORE = 'halo1timer.settings.v1';
 const RING_R = 88;
 const C = 2 * Math.PI * RING_R;            // ring circumference
+const SCHEDULE = [50, 40, 30, 20];         // seconds-remaining number callouts
 
 // Voice packs (recorded clips lifted from the original APK).
 const VOICES = {
@@ -44,24 +49,19 @@ const VOICES = {
 
 const SPAWN_SOUND = 'audio/Spawn.mp3';
 
-// Callout schedule: seconds-remaining -> voice clip key.
-const SCHEDULE = [
-  { at: 50, clip: 'n50' },
-  { at: 40, clip: 'n40' },
-  { at: 30, clip: 'n30' },
-  { at: 20, clip: 'n20' },
-  { at: 10, clip: 'powerups' },
-];
-
 let settings = { voice: 'american_female', keepAwake: true };
-let remaining = DURATION;                  // seconds left
 let running = false;
-let endTime = 0;                           // ms timestamp the timer reaches 0
+let cycleEnd = 0;                          // ms timestamp the current cycle reaches 0
+let cyclesDone = 0;                        // completed cycles
+let remaining = CYCLE;                     // seconds left in the current cycle
 const fired = new Set();
 let wakeLock = null;
 const audioCache = {};
 
 const $ = (id) => document.getElementById(id);
+
+// Completed cycle N spawns power-ups when N is odd, rockets when N is even.
+const itemForCycle = (n) => (n % 2 === 1 ? 'powerups' : 'rockets');
 
 /* ---------- persistence ---------- */
 function load() {
@@ -72,6 +72,12 @@ function load() {
 }
 function save() {
   try { localStorage.setItem(STORE, JSON.stringify(settings)); } catch (e) { /* ignore */ }
+}
+
+/* ---------- formatting ---------- */
+function fmtClock(sec) {
+  sec = Math.max(0, Math.ceil(sec));
+  return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0');
 }
 
 /* ---------- audio ---------- */
@@ -123,8 +129,7 @@ async function releaseWake() {
 function start() {
   if (running) return;
   primeAudio();
-  if (remaining <= 0) { remaining = DURATION; fired.clear(); }
-  endTime = Date.now() + remaining * 1000;
+  cycleEnd = Date.now() + remaining * 1000;
   running = true;
   acquireWake();
   render();
@@ -132,7 +137,7 @@ function start() {
 
 function stop() {
   if (!running) return;
-  remaining = Math.max(0, (endTime - Date.now()) / 1000);
+  remaining = Math.max(0, (cycleEnd - Date.now()) / 1000);
   running = false;
   releaseWake();
   render();
@@ -140,7 +145,8 @@ function stop() {
 
 function reset() {
   running = false;
-  remaining = DURATION;
+  remaining = CYCLE;
+  cyclesDone = 0;
   fired.clear();
   releaseWake();
   render();
@@ -148,45 +154,54 @@ function reset() {
 
 function tick() {
   if (!running) return;
-  remaining = (endTime - Date.now()) / 1000;
-  const secsLeft = Math.ceil(remaining);
-
-  for (const ev of SCHEDULE) {
-    if (remaining > 0 && secsLeft <= ev.at && !fired.has(ev.at)) {
-      fired.add(ev.at);
-      playClip(ev.clip);
-    }
-  }
+  const now = Date.now();
+  remaining = (cycleEnd - now) / 1000;
 
   if (remaining <= 0) {
-    remaining = 0;
-    running = false;
-    if (!fired.has(0)) {
-      fired.add(0);
-      playClip('rockets');
-      playClip('spawn');
+    // Advance past every fully-elapsed cycle (e.g. after the tab slept).
+    while (cycleEnd <= now) { cyclesDone += 1; cycleEnd += CYCLE * 1000; }
+    remaining = (cycleEnd - now) / 1000;
+    fired.clear();
+    playClip(itemForCycle(cyclesDone));
+    playClip('spawn');
+    render();
+    return;
+  }
+
+  const secsLeft = Math.ceil(remaining);
+  for (const at of SCHEDULE) {
+    if (secsLeft <= at && !fired.has(at)) {
+      fired.add(at);
+      playClip('n' + at);
     }
-    releaseWake();
   }
   render();
 }
 
 /* ---------- render ---------- */
 function render() {
-  $('time').textContent = Math.max(0, Math.ceil(remaining));
+  const osLeft = Math.max(0, remaining);
+  $('time').textContent = Math.min(CYCLE, Math.ceil(osLeft));
 
-  const frac = Math.max(0, Math.min(1, remaining / DURATION));
+  const frac = Math.max(0, Math.min(1, remaining / CYCLE));
   $('ring').style.strokeDashoffset = String(C * (1 - frac));
 
-  const dial = document.querySelector('.dial');
-  dial.classList.toggle('warning', running && remaining <= 20 && remaining > 0);
+  const nextItem = itemForCycle(cyclesDone + 1);
+  const rocketsLeft = (nextItem === 'rockets') ? osLeft : osLeft + CYCLE;
+  $('rockets-time').textContent = fmtClock(rocketsLeft);
+  $('powerups-time').textContent = fmtClock(osLeft);
 
-  if (remaining <= 0) $('phase').textContent = 'SPAWNED';
-  else if (running) $('phase').textContent = 'ROCKETS · POWER-UPS';
-  else $('phase').textContent = remaining < DURATION ? 'PAUSED' : 'READY';
+  $('item-rockets').classList.toggle('next', running && nextItem === 'rockets');
+  $('item-powerups').classList.toggle('next', running && nextItem === 'powerups');
+
+  const idle = !running && cyclesDone === 0 && remaining >= CYCLE;
+  if (running) $('phase').textContent = 'NEXT: ' + (nextItem === 'rockets' ? 'ROCKETS' : 'POWER-UPS');
+  else $('phase').textContent = idle ? 'READY' : 'PAUSED';
+
+  document.querySelector('.dial').classList.toggle('warning', running && remaining <= 10 && remaining > 0);
 
   const btn = $('start-btn');
-  btn.textContent = running ? 'STOP' : (remaining > 0 && remaining < DURATION ? 'RESUME' : 'START');
+  btn.textContent = running ? 'STOP' : (idle ? 'START' : 'RESUME');
   btn.classList.toggle('is-stop', running);
 }
 
