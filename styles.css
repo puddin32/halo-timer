@@ -150,28 +150,48 @@ body {
 
 .items {
   display: flex;
-  gap: 28px;
+  gap: 16px;
+  width: min(80vw, 340px);
 }
 
 .item {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  opacity: 0.85;
+  gap: 6px;
+  padding: 12px 8px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+  opacity: 0.5;
+  transition: opacity 0.2s, box-shadow 0.2s, border-color 0.2s;
+}
+
+.item.next {
+  opacity: 1;
+  border-color: var(--cyan);
+  box-shadow: 0 0 16px rgba(52, 214, 232, 0.25);
 }
 
 .item img {
-  height: 30px;
+  height: 34px;
   width: auto;
-  filter: drop-shadow(0 0 6px rgba(52, 214, 232, 0.25));
 }
 
-.item span {
+.item-name {
   font-size: 10px;
   letter-spacing: 2px;
   color: var(--muted);
 }
+
+.item-time {
+  font-size: 22px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.item.next .item-time { color: var(--cyan); }
 
 .dialog {
   width: min(380px, 92vw);
