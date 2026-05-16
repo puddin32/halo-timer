@@ -1,4 +1,4 @@
-const CACHE = 'halo1-timer-v2';
+const CACHE = 'halo1-timer-v3';
 const ASSETS = [
   './',
   './index.html',
@@ -44,18 +44,33 @@ self.addEventListener('activate', (e) => {
   );
 });
 
+// Audio/image/icon files never change -> serve cache-first (fast, offline).
+// The app shell (HTML/CSS/JS/manifest) -> network-first, so code updates
+// show up on a normal reload and fall back to cache when offline.
+const isImmutable = (path) => /\.(mp3|wav|png|ico)$/i.test(path);
+
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
+  const path = new URL(e.request.url).pathname;
+
+  if (isImmutable(path)) {
+    e.respondWith(
+      caches.match(e.request).then((cached) => cached || fetch(e.request).then((resp) => {
+        const copy = resp.clone();
+        caches.open(CACHE).then((c) => c.put(e.request, copy)).catch(() => {});
+        return resp;
+      }))
+    );
+    return;
+  }
+
   e.respondWith(
-    caches.match(e.request).then((cached) => {
-      if (cached) return cached;
-      return fetch(e.request)
-        .then((resp) => {
-          const copy = resp.clone();
-          caches.open(CACHE).then((c) => c.put(e.request, copy)).catch(() => {});
-          return resp;
-        })
-        .catch(() => caches.match('./index.html'));
-    })
+    fetch(e.request)
+      .then((resp) => {
+        const copy = resp.clone();
+        caches.open(CACHE).then((c) => c.put(e.request, copy)).catch(() => {});
+        return resp;
+      })
+      .catch(() => caches.match(e.request).then((cached) => cached || caches.match('./index.html')))
   );
 });
