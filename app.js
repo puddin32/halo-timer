@@ -68,6 +68,7 @@ const fired = new Set();
 let wakeLock = null;
 let shownItem = null;                      // current item shown on the dial
 const audioCache = {};
+const primed = new Set();                  // clips already unlocked for playback
 
 const $ = (id) => document.getElementById(id);
 
@@ -96,12 +97,18 @@ function clipSrcs() {
 }
 
 // Mobile browsers only allow audio after a user gesture. Call this from
-// inside a click handler to load and unlock every clip for the active voice.
+// inside a click handler to unlock each clip once: a silent play/pause
+// (volume 0) satisfies the gesture requirement without an audible blip.
 function primeAudio() {
   clipSrcs().forEach((src) => {
+    if (primed.has(src)) return;
+    primed.add(src);
     let a = audioCache[src];
     if (!a) { a = audioCache[src] = new Audio(src); a.preload = 'auto'; }
-    a.play().then(() => { a.pause(); a.currentTime = 0; }).catch(() => {});
+    a.volume = 0;
+    a.play()
+      .then(() => { a.pause(); a.currentTime = 0; a.volume = 1; })
+      .catch(() => { a.volume = 1; });
   });
 }
 
