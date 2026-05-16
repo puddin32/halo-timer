@@ -1,319 +1,233 @@
 'use strict';
 
-const STORE_TIMERS = 'halotimer.timers.v1';
-const STORE_SETTINGS = 'halotimer.settings.v1';
-const DEFAULT_SETTINGS = { voiceEnabled: true, voiceURI: '', volume: 1, rate: 1, keepAwake: true };
+/*
+ * Faithful web recreation of the "Timer for Halo 1" Android app
+ * (com.jeffrey.halo1timers). A single 60-second respawn timer with
+ * recorded voice callouts, rebuilt from the original APK's assets.
+ */
 
-let timers = [];
-let settings = { ...DEFAULT_SETTINGS };
-const runtime = new Map();   // id -> { endTime: number|null, fired: Set<number> }
-const cardEls = new Map();   // id -> { root, time, status, repeat }
-let voices = [];
+const DURATION = 60;                       // seconds — the Halo 1 respawn cycle
+const STORE = 'halo1timer.settings.v1';
+const RING_R = 88;
+const C = 2 * Math.PI * RING_R;            // ring circumference
+
+// Voice packs (recorded clips lifted from the original APK).
+const VOICES = {
+  american_female: {
+    label: 'American Female',
+    n50: 'audio/american_female/0_american_50.mp3',
+    n40: 'audio/american_female/1_american_40.mp3',
+    n30: 'audio/american_female/2_american_30.mp3',
+    n20: 'audio/american_female/3_american_20.mp3',
+    powerups: 'audio/american_female/4_american_powerups.mp3',
+    rockets: 'audio/american_female/5_american_rockets.mp3',
+  },
+  australian_female: {
+    label: 'Australian Female',
+    n50: 'audio/australian_female/0_au_50.mp3',
+    n40: 'audio/australian_female/1_au_40.mp3',
+    n30: 'audio/australian_female/2_au_30.mp3',
+    n20: 'audio/australian_female/3_au_20.mp3',
+    powerups: 'audio/australian_female/4_au_power_ups.mp3',
+    rockets: 'audio/australian_female/5_au_rockets.mp3',
+  },
+  british_female: {
+    label: 'British Female',
+    n50: 'audio/british_female/0_british_50.mp3',
+    n40: 'audio/british_female/1_british_40.mp3',
+    n30: 'audio/british_female/2_british_30.mp3',
+    n20: 'audio/british_female/3_british_20.mp3',
+    powerups: 'audio/british_female/4_british_power_ups.mp3',
+    rockets: 'audio/british_female/5_british_rockets.mp3',
+  },
+};
+
+const SPAWN_SOUND = 'audio/Spawn.mp3';
+
+// Callout schedule: seconds-remaining -> voice clip key.
+const SCHEDULE = [
+  { at: 50, clip: 'n50' },
+  { at: 40, clip: 'n40' },
+  { at: 30, clip: 'n30' },
+  { at: 20, clip: 'n20' },
+  { at: 10, clip: 'powerups' },
+];
+
+let settings = { voice: 'american_female', keepAwake: true };
+let remaining = DURATION;                  // seconds left
+let running = false;
+let endTime = 0;                           // ms timestamp the timer reaches 0
+const fired = new Set();
 let wakeLock = null;
-let editingId = null;
+const audioCache = {};
 
-const uid = () =>
-  (crypto.randomUUID ? crypto.randomUUID() : 'id' + Date.now() + Math.random().toString(36).slice(2));
+const $ = (id) => document.getElementById(id);
 
 /* ---------- persistence ---------- */
-function loadTimers() {
+function load() {
   try {
-    const raw = localStorage.getItem(STORE_TIMERS);
-    if (raw) {
-      const arr = JSON.parse(raw);
-      if (Array.isArray(arr) && arr.length) return arr;
-    }
+    const s = localStorage.getItem(STORE);
+    if (s) settings = { ...settings, ...JSON.parse(s) };
   } catch (e) { /* ignore */ }
-  return HALO_CE_PRESETS.map((p) => ({ id: uid(), ...p, thresholds: [...p.thresholds] }));
+}
+function save() {
+  try { localStorage.setItem(STORE, JSON.stringify(settings)); } catch (e) { /* ignore */ }
 }
 
-function saveTimers() {
-  try { localStorage.setItem(STORE_TIMERS, JSON.stringify(timers)); } catch (e) { /* ignore */ }
+/* ---------- audio ---------- */
+function clipSrcs() {
+  const v = VOICES[settings.voice] || VOICES.american_female;
+  return [v.n50, v.n40, v.n30, v.n20, v.powerups, v.rockets, SPAWN_SOUND];
 }
 
-function loadSettings() {
-  try {
-    const raw = localStorage.getItem(STORE_SETTINGS);
-    if (raw) return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
-  } catch (e) { /* ignore */ }
-  return { ...DEFAULT_SETTINGS };
-}
-
-function saveSettings() {
-  try { localStorage.setItem(STORE_SETTINGS, JSON.stringify(settings)); } catch (e) { /* ignore */ }
-}
-
-/* ---------- formatting ---------- */
-function fmt(sec) {
-  sec = Math.max(0, Math.round(sec));
-  if (sec < 60) return String(sec);
-  return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0');
-}
-
-/* ---------- speech ---------- */
-function loadVoices() {
-  if (!('speechSynthesis' in window)) return;
-  voices = speechSynthesis.getVoices();
-  const sel = document.getElementById('s-voice-select');
-  sel.innerHTML = '<option value="">Default</option>';
-  voices.forEach((v) => {
-    const o = document.createElement('option');
-    o.value = v.voiceURI;
-    o.textContent = `${v.name} (${v.lang})`;
-    if (v.voiceURI === settings.voiceURI) o.selected = true;
-    sel.appendChild(o);
+// Mobile browsers only allow audio after a user gesture. Call this from
+// inside a click handler to load and unlock every clip for the active voice.
+function primeAudio() {
+  clipSrcs().forEach((src) => {
+    let a = audioCache[src];
+    if (!a) { a = audioCache[src] = new Audio(src); a.preload = 'auto'; }
+    a.play().then(() => { a.pause(); a.currentTime = 0; }).catch(() => {});
   });
 }
 
-function speak(text) {
-  if (!settings.voiceEnabled || !('speechSynthesis' in window)) return;
-  try {
-    const u = new SpeechSynthesisUtterance(text);
-    u.volume = settings.volume;
-    u.rate = settings.rate;
-    const v = voices.find((x) => x.voiceURI === settings.voiceURI);
-    if (v) u.voice = v;
-    speechSynthesis.speak(u);
-  } catch (e) { /* ignore */ }
+function play(src) {
+  if (!src) return;
+  let a = audioCache[src];
+  if (!a) { a = audioCache[src] = new Audio(src); }
+  try { a.currentTime = 0; } catch (e) { /* ignore */ }
+  a.play().catch(() => {});
+}
+
+function playClip(key) {
+  if (key === 'spawn') { play(SPAWN_SOUND); return; }
+  const v = VOICES[settings.voice] || VOICES.american_female;
+  play(v[key]);
 }
 
 /* ---------- wake lock ---------- */
-async function updateWakeLock(anyRunning) {
-  if (!('wakeLock' in navigator)) return;
-  if (settings.keepAwake && anyRunning && !wakeLock) {
-    try {
-      wakeLock = await navigator.wakeLock.request('screen');
-      wakeLock.addEventListener('release', () => { wakeLock = null; });
-    } catch (e) { wakeLock = null; }
-  } else if (wakeLock && (!anyRunning || !settings.keepAwake)) {
+async function acquireWake() {
+  if (!settings.keepAwake || wakeLock || !('wakeLock' in navigator)) return;
+  try {
+    wakeLock = await navigator.wakeLock.request('screen');
+    wakeLock.addEventListener('release', () => { wakeLock = null; });
+  } catch (e) { wakeLock = null; }
+}
+async function releaseWake() {
+  if (wakeLock) {
     try { await wakeLock.release(); } catch (e) { /* ignore */ }
     wakeLock = null;
   }
 }
 
-function anyRunning() {
-  return [...runtime.values()].some((r) => r.endTime != null);
+/* ---------- timer ---------- */
+function start() {
+  if (running) return;
+  primeAudio();
+  if (remaining <= 0) { remaining = DURATION; fired.clear(); }
+  endTime = Date.now() + remaining * 1000;
+  running = true;
+  acquireWake();
+  render();
 }
 
-function evaluateWake() {
-  updateWakeLock(anyRunning());
+function stop() {
+  if (!running) return;
+  remaining = Math.max(0, (endTime - Date.now()) / 1000);
+  running = false;
+  releaseWake();
+  render();
 }
 
-/* ---------- timer control ---------- */
-function rt(id) {
-  if (!runtime.has(id)) runtime.set(id, { endTime: null, fired: new Set() });
-  return runtime.get(id);
-}
-
-function startTimer(t) {
-  const r = rt(t.id);
-  r.endTime = Date.now() + t.interval * 1000;
-  r.fired = new Set();
-  speak(t.name);                 // confirms the tap and unlocks audio on first gesture
-  refreshCard(t.id);
-  evaluateWake();
-}
-
-function stopTimer(id) {
-  const r = rt(id);
-  r.endTime = null;
-  r.fired.clear();
-  refreshCard(id);
-  evaluateWake();
+function reset() {
+  running = false;
+  remaining = DURATION;
+  fired.clear();
+  releaseWake();
+  render();
 }
 
 function tick() {
-  const now = Date.now();
-  for (const t of timers) {
-    const r = runtime.get(t.id);
-    if (!r || r.endTime == null) continue;
+  if (!running) return;
+  remaining = (endTime - Date.now()) / 1000;
+  const secsLeft = Math.ceil(remaining);
 
-    if (r.endTime - now <= 0) {
-      speak(`${t.name} up`);
-      if (t.autoRepeat) {
-        do { r.endTime += t.interval * 1000; } while (r.endTime <= now);
-        r.fired = new Set();
-      } else {
-        r.endTime = null;
-        r.fired.clear();
-      }
-      refreshCard(t.id);
-      continue;
+  for (const ev of SCHEDULE) {
+    if (remaining > 0 && secsLeft <= ev.at && !fired.has(ev.at)) {
+      fired.add(ev.at);
+      playClip(ev.clip);
     }
+  }
 
-    const secsLeft = Math.ceil((r.endTime - now) / 1000);
-    const due = t.thresholds.filter((th) => secsLeft <= th && !r.fired.has(th));
-    if (due.length) {
-      due.forEach((th) => r.fired.add(th));
-      speak(`${t.name} in ${Math.min(...due)}`);
+  if (remaining <= 0) {
+    remaining = 0;
+    running = false;
+    if (!fired.has(0)) {
+      fired.add(0);
+      playClip('rockets');
+      playClip('spawn');
     }
-    refreshCard(t.id);
+    releaseWake();
   }
-  updateWakeLock(anyRunning());
+  render();
 }
 
-/* ---------- rendering ---------- */
-function refreshCard(id) {
-  const els = cardEls.get(id);
-  if (!els) return;
-  const t = timers.find((x) => x.id === id);
-  const r = rt(id);
-  if (r.endTime == null) {
-    els.time.textContent = fmt(t.interval);
-    els.status.textContent = 'Tap to start';
-    els.root.classList.remove('running', 'warning');
-  } else {
-    const secsLeft = Math.max(0, Math.ceil((r.endTime - Date.now()) / 1000));
-    els.time.textContent = fmt(secsLeft);
-    els.status.textContent = 'Tap to restart';
-    els.root.classList.add('running');
-    els.root.classList.toggle('warning', secsLeft <= 10);
-  }
-  els.repeat.classList.toggle('on', !!t.autoRepeat);
-}
+/* ---------- render ---------- */
+function render() {
+  $('time').textContent = Math.max(0, Math.ceil(remaining));
 
-function buildGrid() {
-  const grid = document.getElementById('timer-grid');
-  grid.innerHTML = '';
-  cardEls.clear();
+  const frac = Math.max(0, Math.min(1, remaining / DURATION));
+  $('ring').style.strokeDashoffset = String(C * (1 - frac));
 
-  for (const t of timers) {
-    const card = document.createElement('article');
-    card.className = 'card';
-    card.dataset.id = t.id;
-    card.innerHTML =
-      '<div class="card-main" role="button" tabindex="0">' +
-        '<div class="card-name"></div>' +
-        '<div class="card-time"></div>' +
-        '<div class="card-status"></div>' +
-      '</div>' +
-      '<div class="card-actions">' +
-        '<button class="act repeat-toggle" title="Auto-repeat">&#x21bb;</button>' +
-        '<button class="act stop-btn" title="Stop">&#x25a0;</button>' +
-        '<button class="act edit-btn" title="Edit">&#x270e;</button>' +
-      '</div>';
+  const dial = document.querySelector('.dial');
+  dial.classList.toggle('warning', running && remaining <= 20 && remaining > 0);
 
-    card.querySelector('.card-name').textContent = t.name;
+  if (remaining <= 0) $('phase').textContent = 'SPAWNED';
+  else if (running) $('phase').textContent = 'ROCKETS · POWER-UPS';
+  else $('phase').textContent = remaining < DURATION ? 'PAUSED' : 'READY';
 
-    const main = card.querySelector('.card-main');
-    main.addEventListener('click', () => startTimer(t));
-    main.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); startTimer(t); }
-    });
-    card.querySelector('.stop-btn').addEventListener('click', () => stopTimer(t.id));
-    card.querySelector('.edit-btn').addEventListener('click', () => openEdit(t.id));
-    card.querySelector('.repeat-toggle').addEventListener('click', () => {
-      t.autoRepeat = !t.autoRepeat;
-      saveTimers();
-      refreshCard(t.id);
-    });
-
-    grid.appendChild(card);
-    cardEls.set(t.id, {
-      root: card,
-      time: card.querySelector('.card-time'),
-      status: card.querySelector('.card-status'),
-      repeat: card.querySelector('.repeat-toggle'),
-    });
-    refreshCard(t.id);
-  }
-}
-
-/* ---------- add / edit dialog ---------- */
-function openEdit(id) {
-  editingId = id || null;
-  const t = id ? timers.find((x) => x.id === id) : null;
-  document.getElementById('edit-title').textContent = t ? 'Edit Timer' : 'Add Timer';
-  document.getElementById('f-name').value = t ? t.name : '';
-  document.getElementById('f-min').value = t ? Math.floor(t.interval / 60) : 1;
-  document.getElementById('f-sec').value = t ? t.interval % 60 : 0;
-  document.getElementById('f-thresholds').value = (t ? t.thresholds : [30, 10, 5]).join(', ');
-  document.getElementById('f-repeat').checked = t ? !!t.autoRepeat : false;
-  document.getElementById('f-delete').style.display = t ? '' : 'none';
-  document.getElementById('edit-dialog').showModal();
-}
-
-function saveEdit() {
-  const name = document.getElementById('f-name').value.trim() || 'Timer';
-  const min = parseInt(document.getElementById('f-min').value, 10) || 0;
-  const sec = parseInt(document.getElementById('f-sec').value, 10) || 0;
-  const interval = Math.max(1, min * 60 + sec);
-  const thresholds = document.getElementById('f-thresholds').value
-    .split(',')
-    .map((s) => parseInt(s.trim(), 10))
-    .filter((n) => Number.isFinite(n) && n > 0)
-    .sort((a, b) => b - a);
-  const autoRepeat = document.getElementById('f-repeat').checked;
-
-  if (editingId) {
-    Object.assign(timers.find((x) => x.id === editingId), { name, interval, thresholds, autoRepeat });
-  } else {
-    timers.push({ id: uid(), name, interval, thresholds, autoRepeat });
-  }
-  saveTimers();
-  buildGrid();
-}
-
-function deleteTimer() {
-  if (!editingId) return;
-  timers = timers.filter((x) => x.id !== editingId);
-  runtime.delete(editingId);
-  saveTimers();
-  buildGrid();
+  const btn = $('start-btn');
+  btn.textContent = running ? 'STOP' : (remaining > 0 && remaining < DURATION ? 'RESUME' : 'START');
+  btn.classList.toggle('is-stop', running);
 }
 
 /* ---------- init ---------- */
 function init() {
-  timers = loadTimers();
-  settings = loadSettings();
-  buildGrid();
+  load();
 
-  document.getElementById('s-voice').checked = settings.voiceEnabled;
-  document.getElementById('s-volume').value = settings.volume;
-  document.getElementById('s-rate').value = settings.rate;
-  document.getElementById('s-awake').checked = settings.keepAwake;
+  $('opt-awake').checked = settings.keepAwake;
+  const voiceRadio = document.querySelector(`input[name="voice"][value="${settings.voice}"]`);
+  if (voiceRadio) voiceRadio.checked = true;
 
-  if ('speechSynthesis' in window) {
-    loadVoices();
-    speechSynthesis.onvoiceschanged = loadVoices;
-  }
+  $('ring').style.strokeDasharray = String(C);
+  render();
 
-  document.getElementById('settings-btn').onclick =
-    () => document.getElementById('settings-dialog').showModal();
-  document.getElementById('add-btn').onclick = () => openEdit(null);
+  $('start-btn').addEventListener('click', () => { running ? stop() : start(); });
+  $('reset-btn').addEventListener('click', reset);
 
-  const eDlg = document.getElementById('edit-dialog');
-  document.getElementById('edit-form').addEventListener('submit', () => saveEdit());
-  document.getElementById('f-cancel').onclick = () => eDlg.close();
-  document.getElementById('f-delete').onclick = () => { deleteTimer(); eDlg.close(); };
+  $('options-btn').addEventListener('click', () => $('options').showModal());
+  $('opt-close').addEventListener('click', () => $('options').close());
+  $('opt-test').addEventListener('click', () => { primeAudio(); playClip('n30'); });
 
-  const sDlg = document.getElementById('settings-dialog');
-  document.getElementById('s-close').onclick = () => sDlg.close();
-  document.getElementById('s-voice').onchange =
-    (e) => { settings.voiceEnabled = e.target.checked; saveSettings(); };
-  document.getElementById('s-voice-select').onchange =
-    (e) => { settings.voiceURI = e.target.value; saveSettings(); };
-  document.getElementById('s-volume').oninput =
-    (e) => { settings.volume = parseFloat(e.target.value); saveSettings(); };
-  document.getElementById('s-rate').oninput =
-    (e) => { settings.rate = parseFloat(e.target.value); saveSettings(); };
-  document.getElementById('s-awake').onchange =
-    (e) => { settings.keepAwake = e.target.checked; saveSettings(); evaluateWake(); };
-  document.getElementById('s-test').onclick = () => speak('Rockets in 5');
-  document.getElementById('s-restore').onclick = () => {
-    if (confirm('Replace all timers with the Halo CE defaults?')) {
-      timers = HALO_CE_PRESETS.map((p) => ({ id: uid(), ...p, thresholds: [...p.thresholds] }));
-      runtime.clear();
-      saveTimers();
-      buildGrid();
-    }
-  };
-
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') evaluateWake();
+  $('opt-awake').addEventListener('change', (e) => {
+    settings.keepAwake = e.target.checked;
+    save();
+    if (running && settings.keepAwake) acquireWake();
+    else releaseWake();
   });
 
-  setInterval(tick, 250);
+  document.querySelectorAll('input[name="voice"]').forEach((r) => {
+    r.addEventListener('change', (e) => {
+      settings.voice = e.target.value;
+      save();
+      primeAudio();
+    });
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && running) acquireWake();
+  });
+
+  setInterval(tick, 200);
 }
 
 if ('serviceWorker' in navigator) {
