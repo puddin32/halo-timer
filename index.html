@@ -56,11 +56,19 @@
   <div class="dialog-body">
     <h2>OPTIONS</h2>
     <label class="row"><input type="checkbox" id="opt-awake" checked> Keep screen on</label>
-    <fieldset class="voices">
+    <fieldset class="opt-group">
       <legend>Voice</legend>
       <label class="row"><input type="radio" name="voice" value="american_female" checked> American Female</label>
       <label class="row"><input type="radio" name="voice" value="australian_female"> Australian Female</label>
       <label class="row"><input type="radio" name="voice" value="british_female"> British Female</label>
+    </fieldset>
+    <fieldset class="opt-group">
+      <legend>Audio cues</legend>
+      <label class="row"><input type="checkbox" id="cue-n50" checked> 50-second call</label>
+      <label class="row"><input type="checkbox" id="cue-n40" checked> 40-second call</label>
+      <label class="row"><input type="checkbox" id="cue-n30" checked> 30-second call</label>
+      <label class="row"><input type="checkbox" id="cue-n20" checked> 20-second call</label>
+      <label class="row"><input type="checkbox" id="cue-final" checked> Final 10-second countdown</label>
     </fieldset>
     <div class="dialog-actions">
       <button type="button" id="opt-test" class="btn btn-ghost">Test voice</button>
