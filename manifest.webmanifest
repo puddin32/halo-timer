@@ -1,13 +1,13 @@
 {
-  "name": "Halo CE Talking Timer",
-  "short_name": "Halo Timer",
-  "description": "Spoken respawn timer for Halo: Combat Evolved power weapons and power-ups.",
+  "name": "Timer for Halo 1",
+  "short_name": "Halo 1 Timer",
+  "description": "A 60-second respawn timer for Halo: Combat Evolved with recorded voice callouts.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0a0e14",
-  "theme_color": "#0a0e14",
+  "background_color": "#0d1726",
+  "theme_color": "#0d1726",
   "icons": [
     { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },

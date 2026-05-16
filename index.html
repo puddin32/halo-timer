@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0a0e14">
+<meta name="theme-color" content="#0d1726">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Halo Timer">
-<title>Halo CE Talking Timer</title>
+<meta name="apple-mobile-web-app-title" content="Halo 1 Timer">
+<title>Timer for Halo 1</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
@@ -17,66 +17,51 @@
 <body>
 
 <header class="app-bar">
-  <h1>HALO CE<span>TALKING TIMER</span></h1>
-  <button id="settings-btn" class="icon-btn" aria-label="Settings" title="Settings">&#9881;</button>
+  <h1>TIMER FOR HALO 1</h1>
+  <button id="options-btn" class="icon-btn" aria-label="Options" title="Options">&#9881;</button>
 </header>
 
-<main id="timer-grid" class="timer-grid"></main>
-
-<button id="add-btn" class="add-btn">+ Add Timer</button>
-<p class="note">Respawn times are starting estimates &mdash; tap &#9998; on a card to calibrate any timer.</p>
-
-<!-- Add / Edit timer -->
-<dialog id="edit-dialog" class="dialog">
-  <form method="dialog" id="edit-form" class="dialog-body">
-    <h2 id="edit-title">Add Timer</h2>
-    <label>Name
-      <input id="f-name" type="text" maxlength="24" required placeholder="e.g. Rockets" autocomplete="off">
-    </label>
-    <label>Respawn time
-      <span class="time-inputs">
-        <input id="f-min" type="number" min="0" max="59" value="1"> min
-        <input id="f-sec" type="number" min="0" max="59" value="0"> sec
-      </span>
-    </label>
-    <label>Callout warnings (seconds, comma-separated)
-      <input id="f-thresholds" type="text" value="30, 10, 5" autocomplete="off">
-    </label>
-    <label class="row"><input id="f-repeat" type="checkbox"> Auto-repeat when it fires</label>
-    <div class="dialog-actions">
-      <button type="button" id="f-delete" class="btn-danger">Delete</button>
-      <span class="spacer"></span>
-      <button type="button" id="f-cancel" class="btn-ghost">Cancel</button>
-      <button type="submit" class="btn-primary">Save</button>
+<main class="stage">
+  <div class="dial">
+    <svg viewBox="0 0 200 200" class="ring" aria-hidden="true">
+      <circle class="ring-track" cx="100" cy="100" r="88"/>
+      <circle class="ring-progress" id="ring" cx="100" cy="100" r="88"/>
+    </svg>
+    <div class="dial-center">
+      <div id="time" class="time">60</div>
+      <div id="phase" class="phase">READY</div>
     </div>
-  </form>
-</dialog>
+  </div>
 
-<!-- Settings -->
-<dialog id="settings-dialog" class="dialog">
+  <div class="controls">
+    <button id="start-btn" class="btn btn-primary">START</button>
+    <button id="reset-btn" class="btn btn-ghost">RESET</button>
+  </div>
+
+  <div class="items">
+    <div class="item"><img src="img/rockets.png" alt=""><span>ROCKETS</span></div>
+    <div class="item"><img src="img/powerups.png" alt=""><span>POWER-UPS</span></div>
+  </div>
+</main>
+
+<dialog id="options" class="dialog">
   <div class="dialog-body">
-    <h2>Settings</h2>
-    <label class="row"><input id="s-voice" type="checkbox" checked> Voice callouts</label>
-    <label>Voice
-      <select id="s-voice-select"><option value="">Default</option></select>
-    </label>
-    <label>Volume
-      <input id="s-volume" type="range" min="0" max="1" step="0.05" value="1">
-    </label>
-    <label>Speech rate
-      <input id="s-rate" type="range" min="0.5" max="2" step="0.1" value="1">
-    </label>
-    <label class="row"><input id="s-awake" type="checkbox" checked> Keep screen awake while timers run</label>
+    <h2>OPTIONS</h2>
+    <label class="row"><input type="checkbox" id="opt-awake" checked> Keep screen on</label>
+    <fieldset class="voices">
+      <legend>Voice</legend>
+      <label class="row"><input type="radio" name="voice" value="american_female" checked> American Female</label>
+      <label class="row"><input type="radio" name="voice" value="australian_female"> Australian Female</label>
+      <label class="row"><input type="radio" name="voice" value="british_female"> British Female</label>
+    </fieldset>
     <div class="dialog-actions">
-      <button type="button" id="s-test" class="btn-ghost">Test voice</button>
-      <button type="button" id="s-restore" class="btn-ghost">Restore defaults</button>
+      <button type="button" id="opt-test" class="btn btn-ghost">Test voice</button>
       <span class="spacer"></span>
-      <button type="button" id="s-close" class="btn-primary">Done</button>
+      <button type="button" id="opt-close" class="btn btn-primary">Done</button>
     </div>
   </div>
 </dialog>
 
-<script src="presets.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
