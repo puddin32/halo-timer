@@ -270,6 +270,14 @@ body {
   color: var(--muted);
 }
 
+.opt-version {
+  margin: 0;
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: var(--muted);
+}
+
 .dialog-actions {
   display: flex;
   align-items: center;

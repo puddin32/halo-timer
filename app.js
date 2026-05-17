@@ -15,6 +15,8 @@
 
 const CYCLE = 60;                          // seconds per spawn cycle
 const STORE = 'halo1timer.settings.v2';
+const APP_VERSION = 'v1.0';
+const APP_UPDATED = 'May 17, 2026';        // bump on each released change
 const RING_R = 88;
 const C = 2 * Math.PI * RING_R;            // ring circumference
 const NUMBER_CUES = [50, 40, 30, 20];      // seconds-remaining number callouts
@@ -250,6 +252,7 @@ function init() {
 
   $('opt-awake').checked = settings.keepAwake;
   $('opt-nudge').checked = settings.nudge;
+  $('version-line').textContent = APP_VERSION + ' · updated ' + APP_UPDATED;
   document.querySelector('.controls').classList.toggle('no-nudge', !settings.nudge);
   const voiceRadio = document.querySelector(`input[name="voice"][value="${settings.voice}"]`);
   if (voiceRadio) voiceRadio.checked = true;
