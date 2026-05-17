@@ -59,6 +59,7 @@ const DEFAULTS = {
   voice: 'american_female',
   keepAwake: true,
   nudge: true,
+  showCredit: true,
   cues: { n50: true, n40: true, n30: true, n20: true, final: true },
 };
 
@@ -86,6 +87,7 @@ function load() {
     if (p.voice) settings.voice = p.voice;
     if (typeof p.keepAwake === 'boolean') settings.keepAwake = p.keepAwake;
     if (typeof p.nudge === 'boolean') settings.nudge = p.nudge;
+    if (typeof p.showCredit === 'boolean') settings.showCredit = p.showCredit;
     if (p.cues) settings.cues = { ...settings.cues, ...p.cues };
   } catch (e) { /* ignore */ }
 }
@@ -282,8 +284,10 @@ function init() {
 
   $('opt-awake').checked = settings.keepAwake;
   $('opt-nudge').checked = settings.nudge;
+  $('opt-credit-toggle').checked = settings.showCredit;
   $('version-line').textContent = APP_VERSION + ' · updated ' + APP_UPDATED;
   document.querySelector('.controls').classList.toggle('no-nudge', !settings.nudge);
+  $('app-credit').classList.toggle('hidden', !settings.showCredit);
   const voiceRadio = document.querySelector(`input[name="voice"][value="${settings.voice}"]`);
   if (voiceRadio) voiceRadio.checked = true;
   ['n50', 'n40', 'n30', 'n20', 'final'].forEach((k) => {
@@ -317,6 +321,12 @@ function init() {
     settings.nudge = e.target.checked;
     save();
     document.querySelector('.controls').classList.toggle('no-nudge', !settings.nudge);
+  });
+
+  $('opt-credit-toggle').addEventListener('change', (e) => {
+    settings.showCredit = e.target.checked;
+    save();
+    $('app-credit').classList.toggle('hidden', !settings.showCredit);
   });
 
   document.querySelectorAll('input[name="voice"]').forEach((r) => {
