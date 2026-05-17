@@ -56,6 +56,7 @@ const SPAWN_SOUND = 'audio/Spawn.mp3';
 const DEFAULTS = {
   voice: 'american_female',
   keepAwake: true,
+  nudge: true,
   cues: { n50: true, n40: true, n30: true, n20: true, final: true },
 };
 
@@ -84,6 +85,7 @@ function load() {
     const p = JSON.parse(raw);
     if (p.voice) settings.voice = p.voice;
     if (typeof p.keepAwake === 'boolean') settings.keepAwake = p.keepAwake;
+    if (typeof p.nudge === 'boolean') settings.nudge = p.nudge;
     if (p.cues) settings.cues = { ...settings.cues, ...p.cues };
   } catch (e) { /* ignore */ }
 }
@@ -174,6 +176,14 @@ function reset() {
   render();
 }
 
+// Shift the whole cycle to re-sync a timer that was started off-beat.
+function nudge(deltaMs) {
+  if (!running) return;
+  cycleEnd += deltaMs;
+  startedAt += deltaMs;
+  render();
+}
+
 function tick() {
   if (!running) return;
   const now = Date.now();
@@ -231,6 +241,7 @@ function render() {
   dial.classList.toggle('warning', running && remaining <= FINAL_AT && remaining > 0);
 
   $('start-btn').textContent = running ? 'RESET' : 'START';
+  document.querySelector('.controls').classList.toggle('running', running);
 }
 
 /* ---------- init ---------- */
@@ -238,6 +249,8 @@ function init() {
   load();
 
   $('opt-awake').checked = settings.keepAwake;
+  $('opt-nudge').checked = settings.nudge;
+  document.querySelector('.controls').classList.toggle('no-nudge', !settings.nudge);
   const voiceRadio = document.querySelector(`input[name="voice"][value="${settings.voice}"]`);
   if (voiceRadio) voiceRadio.checked = true;
   ['n50', 'n40', 'n30', 'n20', 'final'].forEach((k) => {
@@ -253,6 +266,8 @@ function init() {
   render();
 
   $('start-btn').addEventListener('click', () => { running ? reset() : start(); });
+  $('minus-btn').addEventListener('click', () => nudge(-1000));
+  $('plus-btn').addEventListener('click', () => nudge(1000));
 
   $('options-btn').addEventListener('click', () => $('options').showModal());
   $('opt-close').addEventListener('click', () => $('options').close());
@@ -263,6 +278,12 @@ function init() {
     save();
     if (running && settings.keepAwake) acquireWake();
     else releaseWake();
+  });
+
+  $('opt-nudge').addEventListener('change', (e) => {
+    settings.nudge = e.target.checked;
+    save();
+    document.querySelector('.controls').classList.toggle('no-nudge', !settings.nudge);
   });
 
   document.querySelectorAll('input[name="voice"]').forEach((r) => {

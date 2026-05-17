@@ -188,6 +188,34 @@ body {
   color: var(--cyan);
 }
 
+.nudge-row {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.nudge-row .elapsed { flex: 1; }
+
+.nudge {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  min-width: 66px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+  color: var(--cyan);
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.controls.running:not(.no-nudge) .nudge { display: flex; }
+
+.nudge:active { background: var(--line); }
+
 .btn-ghost {
   background: var(--panel);
   color: var(--text);
