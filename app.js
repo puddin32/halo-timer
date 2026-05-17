@@ -71,8 +71,6 @@ let remaining = CYCLE;                     // seconds left in the current cycle
 const fired = new Set();
 let wakeLock = null;
 let shownItem = null;                      // current item shown on the dial
-const audioCache = {};
-const primed = new Set();                  // clips already unlocked for playback
 
 const $ = (id) => document.getElementById(id);
 
@@ -101,34 +99,60 @@ function fmtElapsed(sec) {
   return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0');
 }
 
-/* ---------- audio ---------- */
+/* ---------- audio (Web Audio API) ---------- */
+let audioCtx = null;
+const buffers = {};                        // src -> decoded AudioBuffer
+const loadingClip = {};                    // src -> in-flight load Promise
+
 function clipSrcs() {
   const v = VOICES[settings.voice] || VOICES.american_female;
   return [v.n50, v.n40, v.n30, v.n20, v.powerups, v.rockets, SPAWN_SOUND];
 }
 
-// Mobile browsers only allow audio after a user gesture. Call this from
-// inside a click handler to unlock each clip once: a silent play/pause
-// (volume 0) satisfies the gesture requirement without an audible blip.
+function ensureAudioCtx() {
+  if (!audioCtx) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (AC) audioCtx = new AC();
+  }
+  return audioCtx;
+}
+
+function loadClip(src) {
+  if (buffers[src]) return Promise.resolve(buffers[src]);
+  if (loadingClip[src]) return loadingClip[src];
+  const ctx = ensureAudioCtx();
+  if (!ctx) return Promise.resolve(null);
+  loadingClip[src] = fetch(src)
+    .then((r) => r.arrayBuffer())
+    .then((data) => ctx.decodeAudioData(data))
+    .then((buf) => { buffers[src] = buf; delete loadingClip[src]; return buf; })
+    .catch(() => { delete loadingClip[src]; return null; });
+  return loadingClip[src];
+}
+
+// Called from a user gesture (Start tap, voice change, Test voice). Unlocks
+// the audio context and decodes every clip for the active voice into memory,
+// so callouts later play instantly with no audible priming.
 function primeAudio() {
-  clipSrcs().forEach((src) => {
-    if (primed.has(src)) return;
-    primed.add(src);
-    let a = audioCache[src];
-    if (!a) { a = audioCache[src] = new Audio(src); a.preload = 'auto'; }
-    a.volume = 0;
-    a.play()
-      .then(() => { a.pause(); a.currentTime = 0; a.volume = 1; })
-      .catch(() => { a.volume = 1; });
-  });
+  const ctx = ensureAudioCtx();
+  if (ctx && ctx.state === 'suspended') ctx.resume();
+  clipSrcs().forEach(loadClip);
+}
+
+function startBuffer(buf) {
+  const node = audioCtx.createBufferSource();
+  node.buffer = buf;
+  node.connect(audioCtx.destination);
+  node.start();
 }
 
 function play(src) {
   if (!src) return;
-  let a = audioCache[src];
-  if (!a) { a = audioCache[src] = new Audio(src); }
-  try { a.currentTime = 0; } catch (e) { /* ignore */ }
-  a.play().catch(() => {});
+  const ctx = ensureAudioCtx();
+  if (!ctx) return;
+  if (ctx.state === 'suspended') ctx.resume();
+  if (buffers[src]) { startBuffer(buffers[src]); return; }
+  loadClip(src).then((buf) => { if (buf) startBuffer(buf); });
 }
 
 function playClip(key) {
