@@ -228,6 +228,26 @@ body {
   color: var(--cyan);
 }
 
+.dialog-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.voice-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.voice-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+}
+
 .row {
   display: flex;
   align-items: center;
@@ -262,15 +282,8 @@ body {
 
 .opt-credit a { color: var(--cyan); }
 
-.dialog-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.spacer { flex: 1; }
-
-.dialog-actions .btn {
+.dialog-head .btn,
+#opt-test {
   padding: 10px 16px;
   font-size: 13px;
   letter-spacing: 1px;
