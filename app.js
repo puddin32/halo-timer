@@ -202,11 +202,20 @@ function reset() {
   render();
 }
 
-// Shift the whole cycle to re-sync a timer that was started off-beat.
+// Shift a timer that was started off-beat. Re-derives the cycle from the
+// new start time so the cycle count, item and colour stay correct even
+// when a nudge crosses a minute boundary.
 function nudge(deltaMs) {
   if (!running) return;
-  cycleEnd += deltaMs;
-  startedAt += deltaMs;
+  const now = Date.now();
+  startedAt = Math.min(now, startedAt + deltaMs);   // never rewind before the start
+  cyclesDone = Math.floor((now - startedAt) / (CYCLE * 1000));
+  cycleEnd = startedAt + (cyclesDone + 1) * CYCLE * 1000;
+  remaining = (cycleEnd - now) / 1000;
+  const secsLeft = Math.ceil(remaining);
+  fired.clear();
+  for (const at of NUMBER_CUES) { if (at > secsLeft) fired.add(at); }
+  if (secsLeft <= FINAL_AT) fired.add('final');
   render();
 }
 
