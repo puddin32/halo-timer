@@ -6,7 +6,7 @@ cycle: the overshield ("power-ups") spawns every 60 seconds and rockets
 every 120, so the spoken callouts alternate — power-ups, rockets,
 power-ups — as the timer loops.
 
-**Live:** https://puddin32.github.io/halo-timer/
+**Live:** https://puddin32.github.io/halo1-timer/
 
 Open it in a mobile browser and use *Add to Home Screen* to install it as
 an offline app.
