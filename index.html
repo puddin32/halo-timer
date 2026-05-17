@@ -27,23 +27,17 @@
       <circle class="ring-track" cx="100" cy="100" r="88"/>
       <circle class="ring-progress" id="ring" cx="100" cy="100" r="88"/>
     </svg>
-    <img class="dial-icon" id="dial-icon" src="img/powerups.png" alt="">
     <div class="dial-center">
-      <div id="time" class="time">60</div>
-      <div id="phase" class="phase">READY</div>
+      <div id="time" class="time">00:00</div>
     </div>
   </div>
 
+  <img class="item-icon" id="item-icon" src="img/powerups.png" alt="">
+
   <div class="controls">
+    <button id="back-btn" class="nudge" aria-label="Move timer back one second">&larr;</button>
     <button id="start-btn" class="btn btn-primary">START</button>
-    <div class="nudge-row">
-      <button id="back-btn" class="nudge" aria-label="Move timer back one second">&larr;</button>
-      <div class="elapsed">
-        <span class="elapsed-label">ELAPSED</span>
-        <span class="elapsed-time" id="elapsed">0:00</span>
-      </div>
-      <button id="fwd-btn" class="nudge" aria-label="Move timer forward one second">&rarr;</button>
-    </div>
+    <button id="fwd-btn" class="nudge" aria-label="Move timer forward one second">&rarr;</button>
   </div>
 </main>
 
