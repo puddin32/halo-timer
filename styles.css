@@ -50,6 +50,17 @@ body {
   cursor: pointer;
 }
 
+.app-credit {
+  margin: -6px 0 0;
+  padding: 0 18px;
+  text-align: center;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.app-credit a { color: var(--cyan); }
+
 .stage {
   display: flex;
   flex-direction: column;
@@ -236,14 +247,6 @@ body {
   padding: 0 6px;
   font-size: 11px;
   letter-spacing: 2px;
-  color: var(--muted);
-}
-
-.opt-version {
-  margin: 0;
-  text-align: center;
-  font-size: 11px;
-  letter-spacing: 1px;
   color: var(--muted);
 }
 
