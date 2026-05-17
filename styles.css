@@ -56,6 +56,13 @@ body {
   padding: 18px 18px 40px;
 }
 
+.panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 26px;
+}
+
 .dial {
   position: relative;
   width: min(80vw, 340px);
@@ -263,3 +270,25 @@ body {
 }
 
 input[type="checkbox"], input[type="radio"] { accent-color: var(--cyan); width: 18px; height: 18px; }
+
+/* Rotated-phone landscape: dial and controls side by side so the
+   short viewport does not need to scroll. */
+@media (orientation: landscape) and (max-height: 520px) {
+  .stage {
+    flex-direction: row;
+    justify-content: center;
+    gap: 6vw;
+    padding: 12px 18px;
+  }
+
+  .dial { width: min(46vw, 72vh); }
+
+  .panel { gap: 18px; }
+
+  .item-icon {
+    width: min(42vw, 300px);
+    height: 96px;
+  }
+
+  .controls { width: min(42vw, 300px); }
+}
