@@ -28,6 +28,19 @@ an offline app.
 Works fully offline once loaded, supports a landscape layout, and saves
 its settings on the device.
 
+## What's different from the original
+
+This aims to be a faithful recreation, with three deliberate changes:
+
+- **It's a web app.** The original was an Android-only APK; this runs in
+  any modern browser — phone or desktop — and installs as an offline PWA.
+- **Per-cue audio toggles.** Options lets you turn each callout (50 / 40 /
+  30 / 20 and the final 10-second countdown) on or off individually; the
+  original always played them all.
+- **Timer sync arrows.** The ← / → controls nudge a running timer one
+  second either way to re-sync a start made off-beat — something the
+  original had no way to do.
+
 ## Credits & attribution
 
 This is an **unofficial fan recreation** of *Timer for Halo 1* (Android
