@@ -266,8 +266,8 @@ function init() {
   render();
 
   $('start-btn').addEventListener('click', () => { running ? reset() : start(); });
-  $('minus-btn').addEventListener('click', () => nudge(-1000));
-  $('plus-btn').addEventListener('click', () => nudge(1000));
+  $('back-btn').addEventListener('click', () => nudge(1000));
+  $('fwd-btn').addEventListener('click', () => nudge(-1000));
 
   $('options-btn').addEventListener('click', () => $('options').showModal());
   $('opt-close').addEventListener('click', () => $('options').close());

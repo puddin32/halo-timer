@@ -206,9 +206,9 @@ body {
   border-radius: 12px;
   background: var(--panel);
   color: var(--cyan);
-  font-size: 15px;
+  font-size: 22px;
   font-weight: 700;
-  font-variant-numeric: tabular-nums;
+  line-height: 1;
   cursor: pointer;
 }
 

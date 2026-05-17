@@ -37,12 +37,12 @@
   <div class="controls">
     <button id="start-btn" class="btn btn-primary">START</button>
     <div class="nudge-row">
-      <button id="minus-btn" class="nudge" aria-label="Subtract one second">&minus;1s</button>
+      <button id="back-btn" class="nudge" aria-label="Move timer back one second">&larr;</button>
       <div class="elapsed">
         <span class="elapsed-label">ELAPSED</span>
         <span class="elapsed-time" id="elapsed">0:00</span>
       </div>
-      <button id="plus-btn" class="nudge" aria-label="Add one second">+1s</button>
+      <button id="fwd-btn" class="nudge" aria-label="Move timer forward one second">&rarr;</button>
     </div>
   </div>
 </main>
@@ -51,7 +51,7 @@
   <div class="dialog-body">
     <h2>OPTIONS</h2>
     <label class="row"><input type="checkbox" id="opt-awake" checked> Keep screen on</label>
-    <label class="row"><input type="checkbox" id="opt-nudge" checked> Show &plusmn;1s sync buttons</label>
+    <label class="row"><input type="checkbox" id="opt-nudge" checked> Show timer sync arrows</label>
     <fieldset class="opt-group">
       <legend>Voice</legend>
       <label class="row"><input type="radio" name="voice" value="american_female" checked> American Female</label>
