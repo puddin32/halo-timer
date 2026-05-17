@@ -61,6 +61,7 @@ const DEFAULTS = {
 
 let settings = JSON.parse(JSON.stringify(DEFAULTS));
 let running = false;
+let startedAt = 0;                         // ms timestamp the timer was started
 let cycleEnd = 0;                          // ms timestamp the current cycle reaches 0
 let cyclesDone = 0;                        // completed cycles
 let remaining = CYCLE;                     // seconds left in the current cycle
@@ -88,6 +89,12 @@ function load() {
 }
 function save() {
   try { localStorage.setItem(STORE, JSON.stringify(settings)); } catch (e) { /* ignore */ }
+}
+
+/* ---------- formatting ---------- */
+function fmtElapsed(sec) {
+  sec = Math.max(0, Math.floor(sec));
+  return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0');
 }
 
 /* ---------- audio ---------- */
@@ -145,24 +152,23 @@ async function releaseWake() {
 function start() {
   if (running) return;
   primeAudio();
-  cycleEnd = Date.now() + remaining * 1000;
+  const now = Date.now();
+  startedAt = now;
+  cycleEnd = now + CYCLE * 1000;
+  cyclesDone = 0;
+  remaining = CYCLE;
+  fired.clear();
   running = true;
   acquireWake();
   render();
 }
 
-function stop() {
-  if (!running) return;
-  remaining = Math.max(0, (cycleEnd - Date.now()) / 1000);
-  running = false;
-  releaseWake();
-  render();
-}
-
 function reset() {
   running = false;
-  remaining = CYCLE;
+  startedAt = 0;
+  cycleEnd = 0;
   cyclesDone = 0;
+  remaining = CYCLE;
   fired.clear();
   releaseWake();
   render();
@@ -219,15 +225,12 @@ function render() {
     dial.classList.toggle('cycle-powerups', nextItem === 'powerups');
   }
 
-  const idle = !running && cyclesDone === 0 && remaining >= CYCLE;
-  if (running) $('phase').textContent = nextItem === 'rockets' ? 'ROCKETS' : 'POWER-UPS';
-  else $('phase').textContent = idle ? 'READY' : 'PAUSED';
+  $('phase').textContent = running ? (nextItem === 'rockets' ? 'ROCKETS' : 'POWER-UPS') : 'READY';
+  $('elapsed').textContent = fmtElapsed(running ? (Date.now() - startedAt) / 1000 : 0);
 
   dial.classList.toggle('warning', running && remaining <= FINAL_AT && remaining > 0);
 
-  const btn = $('start-btn');
-  btn.textContent = running ? 'STOP' : (idle ? 'START' : 'RESUME');
-  btn.classList.toggle('is-stop', running);
+  $('start-btn').textContent = running ? 'RESET' : 'START';
 }
 
 /* ---------- init ---------- */
@@ -249,8 +252,7 @@ function init() {
   $('ring').style.strokeDasharray = String(C);
   render();
 
-  $('start-btn').addEventListener('click', () => { running ? stop() : start(); });
-  $('reset-btn').addEventListener('click', reset);
+  $('start-btn').addEventListener('click', () => { running ? reset() : start(); });
 
   $('options-btn').addEventListener('click', () => $('options').showModal());
   $('opt-close').addEventListener('click', () => $('options').close());
