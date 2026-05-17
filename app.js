@@ -103,6 +103,7 @@ function fmtElapsed(sec) {
 
 /* ---------- audio (Web Audio API) ---------- */
 let audioCtx = null;
+let cueNode = null;                        // the cue currently playing, if any
 const buffers = {};                        // src -> decoded AudioBuffer
 const loadingClip = {};                    // src -> in-flight load Promise
 
@@ -145,7 +146,19 @@ function startBuffer(buf) {
   const node = audioCtx.createBufferSource();
   node.buffer = buf;
   node.connect(audioCtx.destination);
+  node.onended = () => { if (cueNode === node) cueNode = null; };
   node.start();
+  cueNode = node;
+  return node;
+}
+
+// Cut off whatever cue is mid-playback (used when a nudge re-syncs the
+// timer, so a stale countdown does not keep talking over the new time).
+function stopCue() {
+  if (cueNode) {
+    try { cueNode.stop(); } catch (e) { /* already ended */ }
+    cueNode = null;
+  }
 }
 
 function play(src) {
@@ -195,6 +208,7 @@ function start() {
 
 function reset() {
   running = false;
+  stopCue();                                        // silence any callout still playing
   startedAt = 0;
   cycleEnd = 0;
   cyclesDone = 0;
@@ -209,6 +223,7 @@ function reset() {
 // when a nudge crosses a minute boundary.
 function nudge(deltaMs) {
   if (!running) return;
+  stopCue();                                        // a nudge never leaves a cue talking
   const now = Date.now();
   startedAt = Math.min(now, startedAt + deltaMs);   // never rewind before the start
   cyclesDone = Math.floor((now - startedAt) / (CYCLE * 1000));
