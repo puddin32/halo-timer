@@ -51,15 +51,23 @@
 
 <dialog id="options" class="dialog">
   <div class="dialog-body">
-    <h2>OPTIONS</h2>
+    <div class="dialog-head">
+      <h2>OPTIONS</h2>
+      <button type="button" id="opt-close" class="btn btn-primary">Done</button>
+    </div>
     <label class="row"><input type="checkbox" id="opt-awake" checked> Keep screen on</label>
     <label class="row"><input type="checkbox" id="opt-nudge" checked> Show timer sync arrows</label>
     <label class="row"><input type="checkbox" id="opt-credit-toggle" checked> Show credits on main screen</label>
     <fieldset class="opt-group">
       <legend>Voice</legend>
-      <label class="row"><input type="radio" name="voice" value="american_female" checked> American Female</label>
-      <label class="row"><input type="radio" name="voice" value="australian_female"> Australian Female</label>
-      <label class="row"><input type="radio" name="voice" value="british_female"> British Female</label>
+      <div class="voice-row">
+        <div class="voice-options">
+          <label class="row"><input type="radio" name="voice" value="american_female" checked> American Female</label>
+          <label class="row"><input type="radio" name="voice" value="australian_female"> Australian Female</label>
+          <label class="row"><input type="radio" name="voice" value="british_female"> British Female</label>
+        </div>
+        <button type="button" id="opt-test" class="btn btn-ghost">Test voice</button>
+      </div>
     </fieldset>
     <fieldset class="opt-group">
       <legend>Audio cues</legend>
@@ -69,18 +77,13 @@
       <label class="row"><input type="checkbox" id="cue-n20" checked> 20-second call</label>
       <label class="row"><input type="checkbox" id="cue-final" checked> Final 10-second countdown</label>
     </fieldset>
-    <div class="dialog-actions">
-      <button type="button" id="opt-test" class="btn btn-ghost">Test voice</button>
-      <span class="spacer"></span>
-      <button type="button" id="opt-close" class="btn btn-primary">Done</button>
-    </div>
     <p class="opt-credit">
       Original voice &amp; artwork from <a href="https://youtu.be/EXKX3KgPdeo" target="_blank" rel="noopener">Timer for Halo 1</a>
       by Jeff &ldquo;PacMayne&rdquo; Powell.
       Unofficial &mdash; not affiliated with Microsoft or 343 Industries.
     </p>
     <p class="opt-credit">
-      <a href="https://github.com/puddin32/halo-timer" target="_blank" rel="noopener">View source on GitHub</a>
+      <a href="https://github.com/puddin32/halo1-timer" target="_blank" rel="noopener">View source on GitHub</a>
     </p>
   </div>
 </dialog>
