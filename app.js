@@ -96,7 +96,7 @@ function save() {
 /* ---------- formatting ---------- */
 function fmtElapsed(sec) {
   sec = Math.max(0, Math.floor(sec));
-  return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0');
+  return String(Math.floor(sec / 60)).padStart(2, '0') + ':' + String(sec % 60).padStart(2, '0');
 }
 
 /* ---------- audio (Web Audio API) ---------- */
@@ -246,23 +246,20 @@ function tick() {
 
 /* ---------- render ---------- */
 function render() {
-  const osLeft = Math.max(0, remaining);
-  $('time').textContent = Math.min(CYCLE, Math.ceil(osLeft));
+  $('time').textContent = fmtElapsed(running ? (Date.now() - startedAt) / 1000 : 0);
 
+  // Ring fills as the cycle elapses: empty at cycle start, full at spawn.
   const frac = Math.max(0, Math.min(1, remaining / CYCLE));
-  $('ring').style.strokeDashoffset = String(C * (1 - frac));
+  $('ring').style.strokeDashoffset = String(C * frac);
 
   const nextItem = itemForCycle(cyclesDone + 1);
   const dial = document.querySelector('.dial');
   if (nextItem !== shownItem) {
     shownItem = nextItem;
-    $('dial-icon').src = nextItem === 'rockets' ? 'img/rockets.png' : 'img/powerups.png';
+    $('item-icon').src = nextItem === 'rockets' ? 'img/rockets.png' : 'img/powerups.png';
     dial.classList.toggle('cycle-rockets', nextItem === 'rockets');
     dial.classList.toggle('cycle-powerups', nextItem === 'powerups');
   }
-
-  $('phase').textContent = running ? (nextItem === 'rockets' ? 'ROCKETS' : 'POWER-UPS') : 'READY';
-  $('elapsed').textContent = fmtElapsed(running ? (Date.now() - startedAt) / 1000 : 0);
 
   dial.classList.toggle('warning', running && remaining <= FINAL_AT && remaining > 0);
 
