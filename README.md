@@ -1,12 +1,32 @@
 # Timer for Halo 1
 
 A web recreation of the **"Timer for Halo 1"** Android app — a talking
-respawn timer for Halo: Combat Evolved. It runs a continuous 60-second
-cycle: overshield ("power-ups") spawns every 60 seconds and rockets every
-120, so the spoken callouts alternate as the timer loops. Installable from
-the browser as an offline app.
+respawn timer for *Halo: Combat Evolved*. It runs a continuous 60-second
+cycle: the overshield ("power-ups") spawns every 60 seconds and rockets
+every 120, so the spoken callouts alternate — power-ups, rockets,
+power-ups — as the timer loops.
 
 **Live:** https://puddin32.github.io/halo-timer/
+
+Open it in a mobile browser and use *Add to Home Screen* to install it as
+an offline app.
+
+## Using it
+
+- **START** when the match begins; the timer loops 60-second cycles until
+  you press **RESET**.
+- Each cycle a voice counts down **50 / 40 / 30 / 20** seconds, then a
+  final 10-second countdown, then the spawn callout.
+- The dial fills like a clock and shows total elapsed time; the icon and
+  colour (red rockets / green power-ups) show what spawns next.
+- **← / →** nudge the timer one second back or forward to re-sync a timer
+  started off-beat. They show while running and can be hidden in Options.
+- The **gear** opens Options: voice pack (American / Australian / British
+  Female), which audio cues play, keep-screen-on, and the sync-arrows
+  toggle.
+
+Works fully offline once loaded, supports a landscape layout, and saves
+its settings on the device.
 
 ## Credits & attribution
 
