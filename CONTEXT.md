@@ -23,13 +23,19 @@ synonyms.
 - **Cycle** — one 60-second countdown. The timer is an unbroken sequence of
   cycles from START until RESET. `CYCLE` is the constant (60s); `cyclesDone`
   counts completed cycles.
-- **Item** — what spawns at the end of a cycle: either **power-ups** or
-  **rockets**. Internally `'powerups'` / `'rockets'`. *Power-ups* is the
-  overshield. Odd completed cycle → power-ups; even → rockets (so the
-  sequence is power-ups, rockets, power-ups…). Power-ups thus spawn every
-  60s, rockets every 120s.
-- **Spawn** — the moment a cycle reaches zero and an item becomes
+- **Power-ups** (the overshield) — a pickup that spawns at the end of
+  *every* cycle (every 60s). Internally `'powerups'`.
+- **Rockets** — a pickup that spawns at the end of every *even-numbered*
+  cycle (every 120s), alongside that cycle's power-ups. Internally
+  `'rockets'`.
+- **Item** — the single pickup a cycle *announces* at its end: **rockets**
+  on even cycles, **power-ups** on odd (`itemForCycle`, `shownItem`). Not
+  the same as everything a cycle spawns — see **Spawn**. _Avoid_: using
+  "item" to mean "all pickups this cycle produces".
+- **Spawn** — the moment a cycle reaches zero and its pickups become
   available. Marked by the **spawn sound** (`Spawn.mp3`), a short beep.
+  Power-ups spawn at every cycle's spawn; rockets additionally at even
+  cycles'.
 - **Cue** — an audio callout played during a cycle. Two kinds:
   - **Number cue** — a ~0.9s clip naming the seconds remaining (50, 40, 30,
     20). `NUMBER_CUES` lists the trigger seconds.
@@ -38,10 +44,15 @@ synonyms.
     "rockets" / "power-ups" voice clips *are* this final-countdown clip.
 - **Voice pack** — a named set of recorded cue clips (American / Australian
   / British Female). Lifted from the original APK. Keyed in `VOICES`.
-- **Nudge** — shifting a running timer one second forward or back (the
-  **sync arrows**, ← / →) to re-sync a timer that was started off-beat.
-  Re-derives the whole cycle from the new start time so cycle count, item,
-  and colour stay correct across minute boundaries.
+- **Off-beat** — describes a running timer whose metronome has drifted from
+  the game's true spawn clock, because the player tapped START slightly
+  before or after the real match start. The player detects it by watching
+  an in-game spawn — or, on Halo MCC and the NHE modded build, by comparing
+  against the on-screen match clock those versions display.
+- **Nudge** — a mid-game correction: shifting a running timer one second
+  forward or back (the **sync arrows**, ← / →) to pull an **off-beat**
+  timer back into sync. Re-derives the whole cycle from the new start time
+  so cycle count, item, and colour stay correct across minute boundaries.
 - **Prime** — decoding every clip of the active voice pack into memory from
   a user gesture, so later cues play instantly with no audible priming and
   the audio context is unlocked.
@@ -49,6 +60,22 @@ synonyms.
   cycle elapses, with elapsed time in the centre and the next item's icon
   and colour (red rockets / green power-ups) shown around it.
 - **Warning** — the dial state during the final 10 seconds of a cycle.
+
+## Spawn vs. announce
+
+Power-ups spawn at the end of *every* cycle; rockets spawn additionally at
+the end of every even cycle. But each cycle announces only **one** pickup —
+its **item**. On an even cycle the simultaneous power-ups spawn is
+deliberately *not* announced: the player base already knows power-ups spawn
+on the even minute, and calling both would clutter the audio. So the
+spoken sequence is power-ups, rockets, power-ups… even though power-ups
+spawn on every line of it.
+
+## Flagged ambiguities
+
+- "Item" was used both for *what a cycle spawns* and *what it announces* —
+  resolved: **Item** is only the announced pickup. Power-ups spawn every
+  cycle regardless of which item is announced.
 
 ## Conventions
 
@@ -67,5 +94,6 @@ synonyms.
 ## Not in scope
 
 No accounts, no network calls beyond loading static assets, no
-configurable cycle length (60s is fixed to match the original game), no
-analytics. This is an unofficial, non-commercial fan recreation.
+configurable cycle length (Halo: CE's 60s power-ups / 120s rockets spawn
+timing is fixed by the game itself), no analytics. This is an unofficial,
+non-commercial fan recreation.
