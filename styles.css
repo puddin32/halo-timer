@@ -126,7 +126,7 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 14px;
 }
 
 .time {
@@ -150,14 +150,21 @@ body {
 
 @keyframes pulse { 50% { opacity: 0.5; } }
 
+/* Controls sit inside the dial, beneath the time, within the ring.
+   Kept near the width of the mm:ss text so they clear the ring. */
 .controls {
   display: flex;
   align-items: stretch;
-  gap: 10px;
-  width: min(80vw, 340px);
+  gap: 8px;
+  width: clamp(170px, 54%, 200px);
 }
 
-.controls .btn { flex: 1; }
+.controls .btn {
+  flex: 1;
+  padding: 11px 8px;
+  font-size: 13px;
+  letter-spacing: 1px;
+}
 
 .btn {
   padding: 16px;
@@ -176,21 +183,37 @@ body {
   box-shadow: 0 0 18px rgba(52, 214, 232, 0.35);
 }
 
+/* The Start/Reset button takes on the colour of the next item. */
+.dial.cycle-rockets .btn-primary {
+  background: var(--rockets);
+  border-color: var(--rockets);
+  box-shadow: 0 0 16px rgba(213, 100, 103, 0.4);
+}
+
+.dial.cycle-powerups .btn-primary {
+  background: var(--powerups);
+  border-color: var(--powerups);
+  box-shadow: 0 0 16px rgba(90, 190, 138, 0.4);
+}
+
 .nudge {
   display: none;
   align-items: center;
   justify-content: center;
-  min-width: 66px;
-  padding: 0 14px;
+  min-width: 36px;
+  padding: 0 8px;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 10px;
   background: var(--panel);
   color: var(--cyan);
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 700;
   line-height: 1;
   cursor: pointer;
 }
+
+.dial.cycle-rockets .nudge { color: var(--rockets); border-color: var(--rockets); }
+.dial.cycle-powerups .nudge { color: var(--powerups); border-color: var(--powerups); }
 
 .controls.running:not(.no-nudge) .nudge { display: flex; }
 
@@ -310,5 +333,8 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--cyan); width: 
     height: 96px;
   }
 
-  .controls { width: min(42vw, 300px); }
+  /* Smaller dial -> tighten the in-dial stack so it clears the ring. */
+  .dial-center { gap: 10px; }
+
+  .time { font-size: 46px; }
 }
