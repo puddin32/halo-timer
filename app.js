@@ -208,6 +208,7 @@ function start() {
 
 function reset() {
   running = false;
+  stopCue();                                        // silence any callout still playing
   startedAt = 0;
   cycleEnd = 0;
   cyclesDone = 0;
