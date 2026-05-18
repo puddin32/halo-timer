@@ -1,8 +1,9 @@
-const CACHE = 'halo1-timer-v3';
+const CACHE = 'halo1-timer-v4';
 const ASSETS = [
   './',
   './index.html',
   './styles.css',
+  './timer-core.js',
   './app.js',
   './manifest.webmanifest',
   './icons/icon-192.png',

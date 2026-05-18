@@ -2,9 +2,10 @@
 
 A web recreation of the Android app *Timer for Halo 1* — a talking respawn
 timer for *Halo: Combat Evolved*. It is a static, offline-capable PWA: one
-HTML page (`index.html`), one script (`app.js`), one stylesheet
-(`styles.css`), and a service worker (`sw.js`). No build step, no
-dependencies, no backend.
+HTML page (`index.html`), the timer logic split across `timer-core.js`
+(pure cycle arithmetic) and `app.js` (DOM, audio and event wiring), one
+stylesheet (`styles.css`), and a service worker (`sw.js`). No build step,
+no dependencies, no backend.
 
 ## What it does
 
@@ -79,8 +80,10 @@ spawn on every line of it.
 
 ## Conventions
 
-- Plain ES (`'use strict'`), no framework, no transpilation. The whole app
-  is module-free globals in `app.js`.
+- Plain ES (`'use strict'`), no framework, no transpilation. The app is
+  module-free globals: pure cycle arithmetic in `timer-core.js`, DOM and
+  audio wiring in `app.js`. `timer-core.js` also has a guarded
+  `module.exports` so `node --test` can unit-test it — see ADR-0006.
 - The timer is driven by wall-clock timestamps (`Date.now()`), not a tick
   counter — `tick()` runs every 200ms and re-derives state, so a throttled
   or slept tab catches up correctly instead of drifting.

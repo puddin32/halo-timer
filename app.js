@@ -66,7 +66,6 @@ const DEFAULTS = {
 let settings = JSON.parse(JSON.stringify(DEFAULTS));
 let running = false;
 let startedAt = 0;                         // ms timestamp the timer was started
-let cycleEnd = 0;                          // ms timestamp the current cycle reaches 0
 let cyclesDone = 0;                        // completed cycles
 let remaining = CYCLE;                     // seconds left in the current cycle
 const fired = new Set();
@@ -75,8 +74,8 @@ let shownItem = null;                      // current item shown on the dial
 
 const $ = (id) => document.getElementById(id);
 
-// Completed cycle N spawns power-ups when N is odd, rockets when N is even.
-const itemForCycle = (n) => (n % 2 === 1 ? 'powerups' : 'rockets');
+// itemForCycle, fmtElapsed and deriveCycle come from timer-core.js, loaded
+// as a <script> before this one.
 
 /* ---------- persistence ---------- */
 function load() {
@@ -93,12 +92,6 @@ function load() {
 }
 function save() {
   try { localStorage.setItem(STORE, JSON.stringify(settings)); } catch (e) { /* ignore */ }
-}
-
-/* ---------- formatting ---------- */
-function fmtElapsed(sec) {
-  sec = Math.max(0, Math.floor(sec));
-  return String(Math.floor(sec / 60)).padStart(2, '0') + ':' + String(sec % 60).padStart(2, '0');
 }
 
 /* ---------- audio (Web Audio API) ---------- */
@@ -197,7 +190,6 @@ function start() {
   primeAudio();
   const now = Date.now();
   startedAt = now;
-  cycleEnd = now + CYCLE * 1000;
   cyclesDone = 0;
   remaining = CYCLE;
   fired.clear();
@@ -210,7 +202,6 @@ function reset() {
   running = false;
   stopCue();                                        // silence any callout still playing
   startedAt = 0;
-  cycleEnd = 0;
   cyclesDone = 0;
   remaining = CYCLE;
   fired.clear();
@@ -226,9 +217,9 @@ function nudge(deltaMs) {
   stopCue();                                        // a nudge never leaves a cue talking
   const now = Date.now();
   startedAt = Math.min(now, startedAt + deltaMs);   // never rewind before the start
-  cyclesDone = Math.floor((now - startedAt) / (CYCLE * 1000));
-  cycleEnd = startedAt + (cyclesDone + 1) * CYCLE * 1000;
-  remaining = (cycleEnd - now) / 1000;
+  const cyc = deriveCycle(startedAt, now, CYCLE * 1000);
+  cyclesDone = cyc.cyclesDone;
+  remaining = cyc.remaining;
   const secsLeft = Math.ceil(remaining);
   fired.clear();
   for (const at of NUMBER_CUES) { if (at > secsLeft) fired.add(at); }
@@ -239,12 +230,14 @@ function nudge(deltaMs) {
 function tick() {
   if (!running) return;
   const now = Date.now();
-  remaining = (cycleEnd - now) / 1000;
+  const prevCyclesDone = cyclesDone;
+  const cyc = deriveCycle(startedAt, now, CYCLE * 1000);
+  cyclesDone = cyc.cyclesDone;
+  remaining = cyc.remaining;
 
-  if (remaining <= 0) {
-    // Advance past every fully-elapsed cycle (e.g. after the tab slept).
-    while (cycleEnd <= now) { cyclesDone += 1; cycleEnd += CYCLE * 1000; }
-    remaining = (cycleEnd - now) / 1000;
+  if (cyclesDone > prevCyclesDone) {
+    // One or more cycles reached zero since the last tick (several at once
+    // if the tab slept — see ADR-0002). Mark the spawn and start fresh.
     fired.clear();
     if (settings.cues.final) play(SPAWN_SOUND);   // spawn beep
     render();
