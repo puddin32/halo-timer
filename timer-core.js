@@ -41,6 +41,65 @@ function deriveCycle(startedAt, now, cycleMs = CYCLE_MS) {
   return { cyclesDone, cycleEnd, remaining };
 }
 
+/* ---------- cue schedule ---------- */
+
+// The seconds-remaining marks that trigger a number cue, and the point at
+// which the final countdown begins — the cue schedule's fixed firing
+// rules (see ADR-0002). FINAL_AT is also read by the dial's warning state
+// in app.js.
+const NUMBER_CUES = [50, 40, 30, 20];
+const FINAL_AT = 10;
+
+// A cue schedule tracks which cues have sounded in the current cycle and,
+// asked each tick, returns the cues newly due to play. It owns the firing
+// rules: the once-only (at-10, at] window for number cues — which also
+// skips cues missed while the tab slept (ADR-0002) — the final countdown
+// at FINAL_AT, and resolving that countdown to the cycle's item. A cue
+// disabled in `cues` still counts as fired (so it cannot re-fire later)
+// but is not returned to play.
+function createCueSchedule() {
+  const fired = new Set();        // cue keys already sounded this cycle
+
+  // Begin a fresh cycle — nothing has fired yet.
+  function reset() {
+    fired.clear();
+  }
+
+  // Re-seed after a nudge: every cue whose moment has already passed by
+  // `secsLeft` counts as fired, so the nudge does not replay them.
+  function syncTo(secsLeft) {
+    fired.clear();
+    for (const at of NUMBER_CUES) {
+      if (at > secsLeft) fired.add('n' + at);
+    }
+    if (secsLeft <= FINAL_AT) fired.add('final');
+  }
+
+  // The cues newly due at `secsLeft` of the cycle that ends cycle number
+  // `cyclesDone + 1`. Returns clip keys ready for playClip(); marks every
+  // due cue fired, including ones disabled in `cues` (fire-but-silent).
+  function due(secsLeft, cyclesDone, cues) {
+    const keys = [];
+    for (const at of NUMBER_CUES) {
+      const key = 'n' + at;
+      if (secsLeft <= at && secsLeft > at - 10 && !fired.has(key)) {
+        fired.add(key);
+        if (cues[key]) keys.push(key);
+      }
+    }
+    if (secsLeft <= FINAL_AT && secsLeft > 0 && !fired.has('final')) {
+      fired.add('final');
+      if (cues.final) keys.push(itemForCycle(cyclesDone + 1));
+    }
+    return keys;
+  }
+
+  return { reset, syncTo, due };
+}
+
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { CYCLE_MS, itemForCycle, fmtElapsed, deriveCycle };
+  module.exports = {
+    CYCLE_MS, NUMBER_CUES, FINAL_AT,
+    itemForCycle, fmtElapsed, deriveCycle, createCueSchedule,
+  };
 }

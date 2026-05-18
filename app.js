@@ -19,8 +19,8 @@ const APP_VERSION = 'v1.0';
 const APP_UPDATED = 'May 17, 2026';        // bump on each released change
 const RING_R = 88;
 const C = 2 * Math.PI * RING_R;            // ring circumference
-const NUMBER_CUES = [50, 40, 30, 20];      // seconds-remaining number callouts
-const FINAL_AT = 10;                       // the ~10s countdown clip starts here
+// NUMBER_CUES and FINAL_AT live in timer-core.js — the cue schedule owns
+// them. FINAL_AT is still a global, read by the dial's warning state.
 
 // Voice packs (recorded clips lifted from the original APK).
 const VOICES = {
@@ -68,7 +68,7 @@ let running = false;
 let startedAt = 0;                         // ms timestamp the timer was started
 let cyclesDone = 0;                        // completed cycles
 let remaining = CYCLE;                     // seconds left in the current cycle
-const fired = new Set();
+const cueSchedule = createCueSchedule();   // owns which cues have fired this cycle
 let wakeLock = null;
 let shownItem = null;                      // current item shown on the dial
 
@@ -192,7 +192,7 @@ function start() {
   startedAt = now;
   cyclesDone = 0;
   remaining = CYCLE;
-  fired.clear();
+  cueSchedule.reset();
   running = true;
   acquireWake();
   render();
@@ -204,7 +204,7 @@ function reset() {
   startedAt = 0;
   cyclesDone = 0;
   remaining = CYCLE;
-  fired.clear();
+  cueSchedule.reset();
   releaseWake();
   render();
 }
@@ -220,10 +220,7 @@ function nudge(deltaMs) {
   const cyc = deriveCycle(startedAt, now, CYCLE * 1000);
   cyclesDone = cyc.cyclesDone;
   remaining = cyc.remaining;
-  const secsLeft = Math.ceil(remaining);
-  fired.clear();
-  for (const at of NUMBER_CUES) { if (at > secsLeft) fired.add(at); }
-  if (secsLeft <= FINAL_AT) fired.add('final');
+  cueSchedule.syncTo(Math.ceil(remaining));         // a nudge never replays past cues
   render();
 }
 
@@ -238,28 +235,14 @@ function tick() {
   if (cyclesDone > prevCyclesDone) {
     // One or more cycles reached zero since the last tick (several at once
     // if the tab slept — see ADR-0002). Mark the spawn and start fresh.
-    fired.clear();
+    cueSchedule.reset();
     if (settings.cues.final) play(SPAWN_SOUND);   // spawn beep
     render();
     return;
   }
 
   const secsLeft = Math.ceil(remaining);
-
-  for (const at of NUMBER_CUES) {
-    // The window (at-10, at] keeps a single mark from re-firing and avoids
-    // dumping every missed cue at once after the tab was throttled.
-    if (secsLeft <= at && secsLeft > at - 10 && !fired.has(at)) {
-      fired.add(at);
-      if (settings.cues['n' + at]) playClip('n' + at);
-    }
-  }
-
-  if (secsLeft <= FINAL_AT && secsLeft > 0 && !fired.has('final')) {
-    fired.add('final');
-    if (settings.cues.final) playClip(itemForCycle(cyclesDone + 1));
-  }
-
+  cueSchedule.due(secsLeft, cyclesDone, settings.cues).forEach((k) => playClip(k));
   render();
 }
 
