@@ -22,12 +22,14 @@ old data from a previous shape can be present on a returning user's device.
 Persist settings to **`localStorage`** as a single JSON blob under a
 **versioned key** (`halo1timer.settings.v2`).
 
-`load()` reads the blob defensively: it starts from a deep copy of
-`DEFAULTS` and copies in only recognised, correctly-typed fields from
-storage, so a partial, corrupt, or older blob degrades to defaults rather
-than breaking the app. `save()` writes the whole object. Both wrap their
-storage calls in `try/catch` so private-mode or disabled storage is a
-no-op, not a crash.
+`parseSettings()` in `settings.js` reads the blob defensively: it starts
+from a deep copy of `DEFAULTS` and copies in only recognised,
+correctly-typed fields, so a partial, corrupt, or older blob degrades to
+defaults rather than breaking the app. `load()` and `save()` in `app.js`
+are the thin `localStorage` adapters around it — `load()` hands the
+stored string to `parseSettings()`, `save()` writes the whole object —
+and both wrap their storage calls in `try/catch` so private-mode or
+disabled storage is a no-op, not a crash.
 
 A breaking change to the settings shape is handled by **bumping the version
 suffix** in the key, which abandons the old blob and starts fresh from

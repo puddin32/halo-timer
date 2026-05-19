@@ -14,7 +14,6 @@
  */
 
 const CYCLE = 60;                          // seconds per spawn cycle
-const STORE = 'halo1timer.settings.v2';
 const APP_VERSION = 'v1.0';
 const APP_UPDATED = 'May 17, 2026';        // bump on each released change
 const RING_R = 88;
@@ -25,15 +24,9 @@ const C = 2 * Math.PI * RING_R;            // ring circumference
 // VOICES, SPAWN_SOUND and the clip-path helpers live in voices.js, loaded
 // as a <script> before this one.
 
-const DEFAULTS = {
-  voice: 'american_female',
-  keepAwake: true,
-  nudge: true,
-  showCredit: true,
-  cues: { n50: true, n40: true, n30: true, n20: true, final: true },
-};
-
-let settings = JSON.parse(JSON.stringify(DEFAULTS));
+// DEFAULTS, STORE and parseSettings live in settings.js, loaded as a
+// <script> before this one.
+let settings = parseSettings(null, DEFAULTS);
 let running = false;
 let startedAt = 0;                         // ms timestamp the timer was started
 let cyclesDone = 0;                        // completed cycles
@@ -49,16 +42,9 @@ const $ = (id) => document.getElementById(id);
 
 /* ---------- persistence ---------- */
 function load() {
-  try {
-    const raw = localStorage.getItem(STORE);
-    if (!raw) return;
-    const p = JSON.parse(raw);
-    if (p.voice) settings.voice = p.voice;
-    if (typeof p.keepAwake === 'boolean') settings.keepAwake = p.keepAwake;
-    if (typeof p.nudge === 'boolean') settings.nudge = p.nudge;
-    if (typeof p.showCredit === 'boolean') settings.showCredit = p.showCredit;
-    if (p.cues) settings.cues = { ...settings.cues, ...p.cues };
-  } catch (e) { /* ignore */ }
+  let raw = null;
+  try { raw = localStorage.getItem(STORE); } catch (e) { /* storage unavailable */ }
+  settings = parseSettings(raw, DEFAULTS);
 }
 function save() {
   try { localStorage.setItem(STORE, JSON.stringify(settings)); } catch (e) { /* ignore */ }
