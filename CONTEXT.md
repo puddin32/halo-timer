@@ -4,7 +4,8 @@ A web recreation of the Android app *Timer for Halo 1* — a talking respawn
 timer for *Halo: Combat Evolved*. It is a static, offline-capable PWA: one
 HTML page (`index.html`), the timer logic split across `timer-core.js`
 (DOM-free cycle arithmetic and the cue schedule) and `app.js` (DOM, audio
-and event wiring), the voice-pack manifest (`voices.js`), one stylesheet
+and event wiring), two support modules — the voice-pack manifest
+(`voices.js`) and the settings contract (`settings.js`) — one stylesheet
 (`styles.css`), and a service worker (`sw.js`). No build step, no
 dependencies, no backend.
 
@@ -99,8 +100,9 @@ spawn on every line of it.
   counter — `tick()` runs every 200ms and re-derives state, so a throttled
   or slept tab catches up correctly instead of drifting.
 - Settings (voice, cue toggles, keep-awake, sync-arrows, credit) persist to
-  `localStorage` under the `STORE` key; bump the key's version suffix on a
-  breaking shape change.
+  `localStorage` under the `STORE` key; `parseSettings()` in `settings.js`
+  reads them back defensively, and a breaking shape change is handled by
+  bumping the key's version suffix.
 - Audio uses the Web Audio API (decoded `AudioBuffer`s), not `<audio>`
   elements, so cues can be cut off mid-playback (`stopCue`) on nudge/reset.
 - Released changes bump `APP_VERSION` and `APP_UPDATED` in `app.js`.
