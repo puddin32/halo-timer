@@ -4,8 +4,9 @@ A web recreation of the Android app *Timer for Halo 1* — a talking respawn
 timer for *Halo: Combat Evolved*. It is a static, offline-capable PWA: one
 HTML page (`index.html`), the timer logic split across `timer-core.js`
 (DOM-free cycle arithmetic and the cue schedule) and `app.js` (DOM, audio
-and event wiring), one stylesheet (`styles.css`), and a service worker
-(`sw.js`). No build step, no dependencies, no backend.
+and event wiring), the voice-pack manifest (`voices.js`), one stylesheet
+(`styles.css`), and a service worker (`sw.js`). No build step, no
+dependencies, no backend.
 
 ## What it does
 
@@ -51,7 +52,9 @@ synonyms.
   re-seeds it. A cue switched off in settings still counts as sounded, so
   it cannot re-fire if switched back on mid-cycle.
 - **Voice pack** — a named set of recorded cue clips (American / Australian
-  / British Female). Lifted from the original APK. Keyed in `VOICES`.
+  / British Female). Lifted from the original APK. Keyed in `VOICES` in
+  `voices.js` — the manifest the app reads for playback and the service
+  worker reads to precache clips for offline use.
 - **Off-beat** — describes a running timer whose metronome has drifted from
   the game's true spawn clock, because the player tapped START slightly
   before or after the real match start. The player detects it by watching
