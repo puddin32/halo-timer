@@ -40,8 +40,11 @@ means bumping the `CACHE` version string in `sw.js`.
 - Code changes show up on a normal reload when online, while the app still
   works offline by falling back to the cached shell.
 - Media is served instantly and never needlessly re-downloaded.
-- The `ASSETS` precache list in `sw.js` is maintained by hand — adding a
-  voice pack or image means adding its files there, or they will not be
-  available offline before first play.
+- Voice-pack clips are no longer hand-listed: `sw.js` derives them from
+  `allClipPaths()` in `voices.js`, the shared voice-pack manifest, so a
+  new pack is precached automatically. The rest of the `ASSETS` list — the
+  app shell and images — is still maintained by hand; adding an image
+  means adding it there, or it will not be available offline before first
+  play.
 - The `CACHE` version string must be bumped on release, or `activate` will
   not evict the stale cache.

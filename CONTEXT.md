@@ -2,7 +2,9 @@
 
 A web recreation of the Android app *Timer for Halo 1* — a talking respawn
 timer for *Halo: Combat Evolved*. It is a static, offline-capable PWA: one
-HTML page (`index.html`), one script (`app.js`), one stylesheet
+HTML page (`index.html`), the timer logic split across `timer-core.js`
+(DOM-free cycle arithmetic and the cue schedule) and `app.js` (DOM, audio
+and event wiring), the voice-pack manifest (`voices.js`), one stylesheet
 (`styles.css`), and a service worker (`sw.js`). No build step, no
 dependencies, no backend.
 
@@ -42,8 +44,17 @@ synonyms.
   - **Final countdown** — a ~10s clip that counts down the last 10 seconds
     and names the upcoming item. Starts at `FINAL_AT` (10s remaining). The
     "rockets" / "power-ups" voice clips *are* this final-countdown clip.
+- **Cue schedule** — the per-cycle record of which **cues** have sounded,
+  and the rules for which fire next: the once-only `(at-10, at]` window
+  for **number cues**, the **final countdown** at `FINAL_AT`, and
+  resolving it to the cycle's **item**. `createCueSchedule()` in
+  `timer-core.js`; `tick()` asks it what to play each tick, `nudge()`
+  re-seeds it. A cue switched off in settings still counts as sounded, so
+  it cannot re-fire if switched back on mid-cycle.
 - **Voice pack** — a named set of recorded cue clips (American / Australian
-  / British Female). Lifted from the original APK. Keyed in `VOICES`.
+  / British Female). Lifted from the original APK. Keyed in `VOICES` in
+  `voices.js` — the manifest the app reads for playback and the service
+  worker reads to precache clips for offline use.
 - **Off-beat** — describes a running timer whose metronome has drifted from
   the game's true spawn clock, because the player tapped START slightly
   before or after the real match start. The player detects it by watching
@@ -79,8 +90,11 @@ spawn on every line of it.
 
 ## Conventions
 
-- Plain ES (`'use strict'`), no framework, no transpilation. The whole app
-  is module-free globals in `app.js`.
+- Plain ES (`'use strict'`), no framework, no transpilation. The app is
+  module-free globals: the DOM-free timer logic (cycle arithmetic, the
+  cue schedule) in `timer-core.js`, DOM and audio wiring in `app.js`.
+  `timer-core.js` also has a guarded `module.exports` so `node --test`
+  can unit-test it — see ADR-0006.
 - The timer is driven by wall-clock timestamps (`Date.now()`), not a tick
   counter — `tick()` runs every 200ms and re-derives state, so a throttled
   or slept tab catches up correctly instead of drifting.

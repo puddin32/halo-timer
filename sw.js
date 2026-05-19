@@ -1,33 +1,19 @@
-const CACHE = 'halo1-timer-v3';
+importScripts('voices.js');                // VOICES + allClipPaths()
+
+const CACHE = 'halo1-timer-v5';
 const ASSETS = [
   './',
   './index.html',
   './styles.css',
+  './voices.js',
+  './timer-core.js',
   './app.js',
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png',
   './img/rockets.png',
   './img/powerups.png',
-  './audio/Spawn.mp3',
-  './audio/american_female/0_american_50.mp3',
-  './audio/american_female/1_american_40.mp3',
-  './audio/american_female/2_american_30.mp3',
-  './audio/american_female/3_american_20.mp3',
-  './audio/american_female/4_american_powerups.mp3',
-  './audio/american_female/5_american_rockets.mp3',
-  './audio/australian_female/0_au_50.mp3',
-  './audio/australian_female/1_au_40.mp3',
-  './audio/australian_female/2_au_30.mp3',
-  './audio/australian_female/3_au_20.mp3',
-  './audio/australian_female/4_au_power_ups.mp3',
-  './audio/australian_female/5_au_rockets.mp3',
-  './audio/british_female/0_british_50.mp3',
-  './audio/british_female/1_british_40.mp3',
-  './audio/british_female/2_british_30.mp3',
-  './audio/british_female/3_british_20.mp3',
-  './audio/british_female/4_british_power_ups.mp3',
-  './audio/british_female/5_british_rockets.mp3',
+  ...allClipPaths(),                        // every voice-pack clip + the spawn beep
 ];
 
 self.addEventListener('install', (e) => {

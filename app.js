@@ -19,41 +19,11 @@ const APP_VERSION = 'v1.0';
 const APP_UPDATED = 'May 17, 2026';        // bump on each released change
 const RING_R = 88;
 const C = 2 * Math.PI * RING_R;            // ring circumference
-const NUMBER_CUES = [50, 40, 30, 20];      // seconds-remaining number callouts
-const FINAL_AT = 10;                       // the ~10s countdown clip starts here
+// NUMBER_CUES and FINAL_AT live in timer-core.js — the cue schedule owns
+// them. FINAL_AT is still a global, read by the dial's warning state.
 
-// Voice packs (recorded clips lifted from the original APK).
-const VOICES = {
-  american_female: {
-    label: 'American Female',
-    n50: 'audio/american_female/0_american_50.mp3',
-    n40: 'audio/american_female/1_american_40.mp3',
-    n30: 'audio/american_female/2_american_30.mp3',
-    n20: 'audio/american_female/3_american_20.mp3',
-    powerups: 'audio/american_female/4_american_powerups.mp3',
-    rockets: 'audio/american_female/5_american_rockets.mp3',
-  },
-  australian_female: {
-    label: 'Australian Female',
-    n50: 'audio/australian_female/0_au_50.mp3',
-    n40: 'audio/australian_female/1_au_40.mp3',
-    n30: 'audio/australian_female/2_au_30.mp3',
-    n20: 'audio/australian_female/3_au_20.mp3',
-    powerups: 'audio/australian_female/4_au_power_ups.mp3',
-    rockets: 'audio/australian_female/5_au_rockets.mp3',
-  },
-  british_female: {
-    label: 'British Female',
-    n50: 'audio/british_female/0_british_50.mp3',
-    n40: 'audio/british_female/1_british_40.mp3',
-    n30: 'audio/british_female/2_british_30.mp3',
-    n20: 'audio/british_female/3_british_20.mp3',
-    powerups: 'audio/british_female/4_british_power_ups.mp3',
-    rockets: 'audio/british_female/5_british_rockets.mp3',
-  },
-};
-
-const SPAWN_SOUND = 'audio/Spawn.mp3';
+// VOICES, SPAWN_SOUND and the clip-path helpers live in voices.js, loaded
+// as a <script> before this one.
 
 const DEFAULTS = {
   voice: 'american_female',
@@ -66,17 +36,16 @@ const DEFAULTS = {
 let settings = JSON.parse(JSON.stringify(DEFAULTS));
 let running = false;
 let startedAt = 0;                         // ms timestamp the timer was started
-let cycleEnd = 0;                          // ms timestamp the current cycle reaches 0
 let cyclesDone = 0;                        // completed cycles
 let remaining = CYCLE;                     // seconds left in the current cycle
-const fired = new Set();
+const cueSchedule = createCueSchedule();   // owns which cues have fired this cycle
 let wakeLock = null;
 let shownItem = null;                      // current item shown on the dial
 
 const $ = (id) => document.getElementById(id);
 
-// Completed cycle N spawns power-ups when N is odd, rockets when N is even.
-const itemForCycle = (n) => (n % 2 === 1 ? 'powerups' : 'rockets');
+// itemForCycle, fmtElapsed and deriveCycle come from timer-core.js, loaded
+// as a <script> before this one.
 
 /* ---------- persistence ---------- */
 function load() {
@@ -95,22 +64,11 @@ function save() {
   try { localStorage.setItem(STORE, JSON.stringify(settings)); } catch (e) { /* ignore */ }
 }
 
-/* ---------- formatting ---------- */
-function fmtElapsed(sec) {
-  sec = Math.max(0, Math.floor(sec));
-  return String(Math.floor(sec / 60)).padStart(2, '0') + ':' + String(sec % 60).padStart(2, '0');
-}
-
 /* ---------- audio (Web Audio API) ---------- */
 let audioCtx = null;
 let cueNode = null;                        // the cue currently playing, if any
 const buffers = {};                        // src -> decoded AudioBuffer
 const loadingClip = {};                    // src -> in-flight load Promise
-
-function clipSrcs() {
-  const v = VOICES[settings.voice] || VOICES.american_female;
-  return [v.n50, v.n40, v.n30, v.n20, v.powerups, v.rockets, SPAWN_SOUND];
-}
 
 function ensureAudioCtx() {
   if (!audioCtx) {
@@ -139,7 +97,7 @@ function loadClip(src) {
 function primeAudio() {
   const ctx = ensureAudioCtx();
   if (ctx && ctx.state === 'suspended') ctx.resume();
-  clipSrcs().forEach(loadClip);
+  clipPaths(settings.voice).forEach(loadClip);
 }
 
 function startBuffer(buf) {
@@ -197,10 +155,9 @@ function start() {
   primeAudio();
   const now = Date.now();
   startedAt = now;
-  cycleEnd = now + CYCLE * 1000;
   cyclesDone = 0;
   remaining = CYCLE;
-  fired.clear();
+  cueSchedule.reset();
   running = true;
   acquireWake();
   render();
@@ -210,10 +167,9 @@ function reset() {
   running = false;
   stopCue();                                        // silence any callout still playing
   startedAt = 0;
-  cycleEnd = 0;
   cyclesDone = 0;
   remaining = CYCLE;
-  fired.clear();
+  cueSchedule.reset();
   releaseWake();
   render();
 }
@@ -226,47 +182,32 @@ function nudge(deltaMs) {
   stopCue();                                        // a nudge never leaves a cue talking
   const now = Date.now();
   startedAt = Math.min(now, startedAt + deltaMs);   // never rewind before the start
-  cyclesDone = Math.floor((now - startedAt) / (CYCLE * 1000));
-  cycleEnd = startedAt + (cyclesDone + 1) * CYCLE * 1000;
-  remaining = (cycleEnd - now) / 1000;
-  const secsLeft = Math.ceil(remaining);
-  fired.clear();
-  for (const at of NUMBER_CUES) { if (at > secsLeft) fired.add(at); }
-  if (secsLeft <= FINAL_AT) fired.add('final');
+  const cyc = deriveCycle(startedAt, now, CYCLE * 1000);
+  cyclesDone = cyc.cyclesDone;
+  remaining = cyc.remaining;
+  cueSchedule.syncTo(Math.ceil(remaining));         // a nudge never replays past cues
   render();
 }
 
 function tick() {
   if (!running) return;
   const now = Date.now();
-  remaining = (cycleEnd - now) / 1000;
+  const prevCyclesDone = cyclesDone;
+  const cyc = deriveCycle(startedAt, now, CYCLE * 1000);
+  cyclesDone = cyc.cyclesDone;
+  remaining = cyc.remaining;
 
-  if (remaining <= 0) {
-    // Advance past every fully-elapsed cycle (e.g. after the tab slept).
-    while (cycleEnd <= now) { cyclesDone += 1; cycleEnd += CYCLE * 1000; }
-    remaining = (cycleEnd - now) / 1000;
-    fired.clear();
+  if (cyclesDone > prevCyclesDone) {
+    // One or more cycles reached zero since the last tick (several at once
+    // if the tab slept — see ADR-0002). Mark the spawn and start fresh.
+    cueSchedule.reset();
     if (settings.cues.final) play(SPAWN_SOUND);   // spawn beep
     render();
     return;
   }
 
   const secsLeft = Math.ceil(remaining);
-
-  for (const at of NUMBER_CUES) {
-    // The window (at-10, at] keeps a single mark from re-firing and avoids
-    // dumping every missed cue at once after the tab was throttled.
-    if (secsLeft <= at && secsLeft > at - 10 && !fired.has(at)) {
-      fired.add(at);
-      if (settings.cues['n' + at]) playClip('n' + at);
-    }
-  }
-
-  if (secsLeft <= FINAL_AT && secsLeft > 0 && !fired.has('final')) {
-    fired.add('final');
-    if (settings.cues.final) playClip(itemForCycle(cyclesDone + 1));
-  }
-
+  cueSchedule.due(secsLeft, cyclesDone, settings.cues).forEach((k) => playClip(k));
   render();
 }
 
