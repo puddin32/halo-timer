@@ -215,9 +215,10 @@ body {
   white-space: nowrap;
 }
 
-/* The running labels ("HOLD TO RESET" / "RESET") are longer than START,
-   so shrink them to fit without widening the control zone. */
-.controls.running #start-label {
+/* "HOLD TO RESET" is longer than START and must shrink to fit the control
+   zone. "RESET" (hold-to-reset off) is short, so it keeps the START size
+   and matches it — only the hold-mode label is scoped here. */
+.controls.running.hold-reset #start-label {
   font-size: 15px;
   letter-spacing: 1px;
 }

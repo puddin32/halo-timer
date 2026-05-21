@@ -222,7 +222,11 @@ function render() {
   $('start-label').textContent = running
     ? (settings.holdToReset ? 'HOLD TO RESET' : 'RESET')
     : 'START';
-  document.querySelector('.controls').classList.toggle('running', running);
+  const controls = document.querySelector('.controls');
+  controls.classList.toggle('running', running);
+  // Strict boolean: classList.toggle with `undefined` is a plain toggle and
+  // would flip the class on every render.
+  controls.classList.toggle('hold-reset', settings.holdToReset === true);
 }
 
 /* ---------- hold-to-reset ---------- */
