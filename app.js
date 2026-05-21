@@ -254,6 +254,19 @@ function completeHold() {
   reset();
 }
 
+/* ---------- nudge feedback ---------- */
+// A nudge shifts the timer by a single second — an easy change to miss —
+// so each tap is confirmed with a haptic buzz and a brief accent flash on
+// the arrow pressed (the flash animation lives in styles.css).
+function nudgeTap(btn, deltaMs) {
+  // Drop, reflow, re-add so the flash restarts cleanly on a rapid re-tap.
+  btn.classList.remove('flash');
+  void btn.offsetWidth;
+  btn.classList.add('flash');
+  if (navigator.vibrate) navigator.vibrate(20);
+  nudge(deltaMs);
+}
+
 /* ---------- init ---------- */
 function init() {
   load();
@@ -293,8 +306,11 @@ function init() {
   });
   $('reset-fill').addEventListener('animationend', completeHold);
 
-  $('back-btn').addEventListener('click', () => nudge(1000));
-  $('fwd-btn').addEventListener('click', () => nudge(-1000));
+  $('back-btn').addEventListener('click', () => nudgeTap($('back-btn'), 1000));
+  $('fwd-btn').addEventListener('click', () => nudgeTap($('fwd-btn'), -1000));
+  ['back-btn', 'fwd-btn'].forEach((id) => {
+    $(id).addEventListener('animationend', () => $(id).classList.remove('flash'));
+  });
 
   $('options-btn').addEventListener('click', () => $('options').showModal());
   $('opt-close').addEventListener('click', () => $('options').close());
