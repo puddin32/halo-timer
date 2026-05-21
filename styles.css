@@ -374,3 +374,20 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--cyan); width: 
 
   .time { font-size: 46px; }
 }
+
+/* Landscape squeezed too short for a usable dial: drop to the essentials —
+   the time readout and the controls — so the ring and icon can't shrink
+   into each other. Raise this max-height if overlap still shows above the
+   cutover. */
+@media (orientation: landscape) and (max-height: 320px) {
+  .ring,
+  .item-icon { display: none; }
+
+  /* With the ring gone, collapse the dial onto the time itself. */
+  .dial {
+    width: auto;
+    aspect-ratio: auto;
+  }
+
+  .dial-center { position: static; }
+}
