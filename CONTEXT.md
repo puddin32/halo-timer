@@ -69,8 +69,8 @@ synonyms.
   a user gesture, so later cues play instantly with no audible priming and
   the audio context is unlocked.
 - **Dial** — the circular timer face: the progress **ring** fills as the
-  cycle elapses, with elapsed time in the centre and the next item's icon
-  and colour (red rockets / green power-ups) shown around it.
+  cycle elapses, with the elapsed time and the next item's icon stacked
+  inside it, tinted by the item's colour (red rockets / green power-ups).
 - **Warning** — the dial state during the final 10 seconds of a cycle.
 
 ## Spawn vs. announce

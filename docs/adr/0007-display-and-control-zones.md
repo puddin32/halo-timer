@@ -34,9 +34,10 @@ Split the screen into two zones, each with one job:
   band below the dial. It answers "what can I do?" with fat tap targets
   sized for a phone at arm's length, no longer squeezed to fit the ring.
 
-The two zones are siblings under `.stage` (`.display` and `.controls`).
-The cycle accent colour (cyan / red rockets / green power-ups) is toggled
-on `.stage`, their common ancestor, so both zones theme from one class.
+The two zones are siblings under `.stage` (`.dial` and `.controls`); the
+dial *is* the display zone. The cycle accent colour (cyan / red rockets /
+green power-ups) is toggled on `.stage`, their common ancestor, so both
+zones theme from one class.
 
 This rests on a principle that should outlast this one change: **audio
 drives decisions; the screen confirms.** The player acts on the cues. The

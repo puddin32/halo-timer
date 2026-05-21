@@ -71,15 +71,6 @@ body {
   padding: 18px 18px 40px;
 }
 
-/* The display zone — the dial plus the item icon. Glance-only, never
-   touched; the control zone below it owns every tap target. */
-.display {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 22px;
-}
-
 .dial {
   position: relative;
   width: min(80vw, 340px);
@@ -115,10 +106,14 @@ body {
   filter: drop-shadow(0 0 6px var(--powerups));
 }
 
+/* A fixed 2:1 slot inside the dial, below the time. The box never changes
+   size, so switching rockets <-> power-ups cannot shift the layout — only
+   the silhouette inside swaps (ADR-0009). */
 .item-icon {
-  width: min(80vw, 340px);
-  height: 120px;
+  width: 60%;
+  aspect-ratio: 2 / 1;
   object-fit: contain;
+  flex-shrink: 0;
 }
 
 .dial-center {
@@ -361,8 +356,9 @@ body {
 
 input[type="checkbox"], input[type="radio"] { accent-color: var(--cyan); width: 18px; height: 18px; }
 
-/* Rotated-phone landscape: the display and the control zone sit side by
-   side so the short viewport does not need to scroll. */
+/* Rotated-phone landscape: the dial and the control zone sit side by side
+   so the short viewport does not need to scroll. The item icon scales
+   with the dial, so it needs no separate override. */
 @media (orientation: landscape) and (max-height: 520px) {
   .stage {
     flex-direction: row;
@@ -371,14 +367,7 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--cyan); width: 
     padding: 12px 18px;
   }
 
-  .display { gap: 16px; }
-
   .dial { width: min(40vw, 64vh); }
-
-  .item-icon {
-    width: min(38vw, 280px);
-    height: 88px;
-  }
 
   .controls { width: min(40vw, 320px); }
 
