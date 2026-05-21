@@ -222,7 +222,9 @@ function render() {
   $('start-label').textContent = running
     ? (settings.holdToReset ? 'HOLD TO RESET' : 'RESET')
     : 'START';
-  document.querySelector('.controls').classList.toggle('running', running);
+  const controls = document.querySelector('.controls');
+  controls.classList.toggle('running', running);
+  controls.classList.toggle('hold-reset', settings.holdToReset);
 }
 
 /* ---------- hold-to-reset ---------- */
