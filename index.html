@@ -29,23 +29,23 @@
 </p>
 
 <main class="stage">
-  <div class="dial">
-    <svg viewBox="0 0 200 200" class="ring" aria-hidden="true">
-      <circle class="ring-track" cx="100" cy="100" r="88"/>
-      <circle class="ring-progress" id="ring" cx="100" cy="100" r="88"/>
-    </svg>
-    <div class="dial-center">
-      <div id="time" class="time">00:00</div>
-      <div class="controls">
-        <button id="back-btn" class="nudge" aria-label="Move timer back one second">&larr;</button>
-        <button id="start-btn" class="btn btn-primary">START</button>
-        <button id="fwd-btn" class="nudge" aria-label="Move timer forward one second">&rarr;</button>
+  <div class="display">
+    <div class="dial">
+      <svg viewBox="0 0 200 200" class="ring" aria-hidden="true">
+        <circle class="ring-track" cx="100" cy="100" r="88"/>
+        <circle class="ring-progress" id="ring" cx="100" cy="100" r="88"/>
+      </svg>
+      <div class="dial-center">
+        <div id="time" class="time">00:00</div>
       </div>
     </div>
+    <img class="item-icon" id="item-icon" src="img/powerups.png" alt="">
   </div>
 
-  <div class="panel">
-    <img class="item-icon" id="item-icon" src="img/powerups.png" alt="">
+  <div class="controls">
+    <button id="back-btn" class="nudge" aria-label="Move timer back one second">&larr;</button>
+    <button id="start-btn" class="btn btn-primary">START</button>
+    <button id="fwd-btn" class="nudge" aria-label="Move timer forward one second">&rarr;</button>
   </div>
 </main>
 

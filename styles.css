@@ -71,11 +71,13 @@ body {
   padding: 18px 18px 40px;
 }
 
-.panel {
+/* The display zone — the dial plus the item icon. Glance-only, never
+   touched; the control zone below it owns every tap target. */
+.display {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 26px;
+  gap: 22px;
 }
 
 .dial {
@@ -103,12 +105,12 @@ body {
   transition: stroke-dashoffset 0.25s linear;
 }
 
-.dial.cycle-rockets .ring-progress {
+.stage.cycle-rockets .ring-progress {
   stroke: var(--rockets);
   filter: drop-shadow(0 0 6px var(--rockets));
 }
 
-.dial.cycle-powerups .ring-progress {
+.stage.cycle-powerups .ring-progress {
   stroke: var(--powerups);
   filter: drop-shadow(0 0 6px var(--powerups));
 }
@@ -136,12 +138,12 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-.dial.cycle-rockets .time {
+.stage.cycle-rockets .time {
   color: var(--rockets);
   text-shadow: 0 0 18px var(--rockets);
 }
 
-.dial.cycle-powerups .time {
+.stage.cycle-powerups .time {
   color: var(--powerups);
   text-shadow: 0 0 18px var(--powerups);
 }
@@ -150,20 +152,20 @@ body {
 
 @keyframes pulse { 50% { opacity: 0.5; } }
 
-/* Controls sit inside the dial, beneath the time, within the ring.
-   Kept near the width of the mm:ss text so they clear the ring. */
+/* The control zone — a dedicated band below the display. The dial is for
+   glancing; this is for tapping, so the targets are sized for a phone
+   propped at arm's length, not squeezed to fit inside the ring. */
 .controls {
   display: flex;
   align-items: stretch;
-  gap: 8px;
-  width: clamp(170px, 54%, 200px);
+  gap: 12px;
+  width: min(80vw, 340px);
 }
 
 .controls .btn {
   flex: 1;
-  padding: 11px 8px;
-  font-size: 13px;
-  letter-spacing: 1px;
+  padding: 22px 12px;
+  font-size: 18px;
 }
 
 .btn {
@@ -184,13 +186,13 @@ body {
 }
 
 /* The Start/Reset button takes on the colour of the next item. */
-.dial.cycle-rockets .btn-primary {
+.stage.cycle-rockets .btn-primary {
   background: var(--rockets);
   border-color: var(--rockets);
   box-shadow: 0 0 16px rgba(213, 100, 103, 0.4);
 }
 
-.dial.cycle-powerups .btn-primary {
+.stage.cycle-powerups .btn-primary {
   background: var(--powerups);
   border-color: var(--powerups);
   box-shadow: 0 0 16px rgba(90, 190, 138, 0.4);
@@ -200,20 +202,20 @@ body {
   display: none;
   align-items: center;
   justify-content: center;
-  min-width: 36px;
-  padding: 0 8px;
+  min-width: 64px;
+  padding: 0 12px;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--panel);
   color: var(--cyan);
-  font-size: 18px;
+  font-size: 24px;
   font-weight: 700;
   line-height: 1;
   cursor: pointer;
 }
 
-.dial.cycle-rockets .nudge { color: var(--rockets); border-color: var(--rockets); }
-.dial.cycle-powerups .nudge { color: var(--powerups); border-color: var(--powerups); }
+.stage.cycle-rockets .nudge { color: var(--rockets); border-color: var(--rockets); }
+.stage.cycle-powerups .nudge { color: var(--powerups); border-color: var(--powerups); }
 
 .controls.running:not(.no-nudge) .nudge { display: flex; }
 
@@ -314,8 +316,8 @@ body {
 
 input[type="checkbox"], input[type="radio"] { accent-color: var(--cyan); width: 18px; height: 18px; }
 
-/* Rotated-phone landscape: dial and controls side by side so the
-   short viewport does not need to scroll. */
+/* Rotated-phone landscape: the display and the control zone sit side by
+   side so the short viewport does not need to scroll. */
 @media (orientation: landscape) and (max-height: 520px) {
   .stage {
     flex-direction: row;
@@ -324,17 +326,16 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--cyan); width: 
     padding: 12px 18px;
   }
 
-  .dial { width: min(46vw, 72vh); }
+  .display { gap: 16px; }
 
-  .panel { gap: 18px; }
+  .dial { width: min(40vw, 64vh); }
 
   .item-icon {
-    width: min(42vw, 300px);
-    height: 96px;
+    width: min(38vw, 280px);
+    height: 88px;
   }
 
-  /* Smaller dial -> tighten the in-dial stack so it clears the ring. */
-  .dial-center { gap: 10px; }
+  .controls { width: min(40vw, 320px); }
 
   .time { font-size: 46px; }
 }
