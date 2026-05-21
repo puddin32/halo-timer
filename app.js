@@ -139,6 +139,7 @@ async function releaseWake() {
 function start() {
   if (running) return;
   primeAudio();
+  play(SPAWN_SOUND);                         // audio-liveness check: confirms cues are alive at t=0
   const now = Date.now();
   startedAt = now;
   cyclesDone = 0;
