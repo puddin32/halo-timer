@@ -41,12 +41,18 @@
   </div>
 
   <div class="controls">
-    <button id="back-btn" class="nudge" aria-label="Move timer back one second">&larr;</button>
+    <button id="back-btn" class="nudge" aria-label="Move timer back one second">
+      <span class="nudge-glyph" aria-hidden="true">&larr;</span>
+      <span class="nudge-unit" aria-hidden="true">1s</span>
+    </button>
     <button id="start-btn" class="btn btn-primary">
       <span id="reset-fill" aria-hidden="true"></span>
       <span id="start-label">START</span>
     </button>
-    <button id="fwd-btn" class="nudge" aria-label="Move timer forward one second">&rarr;</button>
+    <button id="fwd-btn" class="nudge" aria-label="Move timer forward one second">
+      <span class="nudge-glyph" aria-hidden="true">&rarr;</span>
+      <span class="nudge-unit" aria-hidden="true">1s</span>
+    </button>
   </div>
 </main>
 
