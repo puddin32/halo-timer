@@ -224,7 +224,9 @@ function render() {
     : 'START';
   const controls = document.querySelector('.controls');
   controls.classList.toggle('running', running);
-  controls.classList.toggle('hold-reset', settings.holdToReset);
+  // Strict boolean: classList.toggle with `undefined` is a plain toggle and
+  // would flip the class on every render.
+  controls.classList.toggle('hold-reset', settings.holdToReset === true);
 }
 
 /* ---------- hold-to-reset ---------- */
