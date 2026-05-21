@@ -207,15 +207,17 @@ function render() {
   $('ring').style.strokeDashoffset = String(C * frac);
 
   const nextItem = itemForCycle(cyclesDone + 1);
-  const dial = document.querySelector('.dial');
   if (nextItem !== shownItem) {
     shownItem = nextItem;
     $('item-icon').src = nextItem === 'rockets' ? 'img/rockets.png' : 'img/powerups.png';
-    dial.classList.toggle('cycle-rockets', nextItem === 'rockets');
-    dial.classList.toggle('cycle-powerups', nextItem === 'powerups');
+    // The cycle accent themes both the display and the control zone, so it
+    // lives on .stage — their common ancestor — not on .dial.
+    const stage = document.querySelector('.stage');
+    stage.classList.toggle('cycle-rockets', nextItem === 'rockets');
+    stage.classList.toggle('cycle-powerups', nextItem === 'powerups');
   }
 
-  dial.classList.toggle('warning', running && remaining <= FINAL_AT && remaining > 0);
+  document.querySelector('.dial').classList.toggle('warning', running && remaining <= FINAL_AT && remaining > 0);
 
   $('start-btn').textContent = running ? 'RESET' : 'START';
   document.querySelector('.controls').classList.toggle('running', running);
