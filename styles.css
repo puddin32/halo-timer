@@ -198,6 +198,51 @@ body {
   box-shadow: 0 0 16px rgba(90, 190, 138, 0.4);
 }
 
+/* ---- hold-to-reset ---- */
+#start-btn {
+  position: relative;
+  overflow: hidden;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* The label sits above the fill — both are positioned and the label is
+   later in the DOM. nowrap keeps "HOLD TO RESET" from reflowing the
+   button's height onto two lines. */
+#start-label {
+  position: relative;
+  white-space: nowrap;
+}
+
+/* The running labels ("HOLD TO RESET" / "RESET") are longer than START,
+   so shrink them to fit without widening the control zone. */
+.controls.running #start-label {
+  font-size: 15px;
+  letter-spacing: 1px;
+}
+
+/* The fill sweeps across the button during a hold. Its 1s animation is
+   the single source of truth for the hold length — app.js fires the
+   reset off this element's `animationend` (ADR-0008). */
+#reset-fill {
+  position: absolute;
+  inset: 0;
+  transform: scaleX(0);
+  transform-origin: left;
+  background: rgba(0, 0, 0, 0.32);
+  pointer-events: none;
+}
+
+#start-btn.holding #reset-fill {
+  animation: hold-fill 1s linear forwards;
+}
+
+@keyframes hold-fill {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
 .nudge {
   display: none;
   align-items: center;

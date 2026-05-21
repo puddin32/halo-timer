@@ -44,7 +44,10 @@
 
   <div class="controls">
     <button id="back-btn" class="nudge" aria-label="Move timer back one second">&larr;</button>
-    <button id="start-btn" class="btn btn-primary">START</button>
+    <button id="start-btn" class="btn btn-primary">
+      <span id="reset-fill" aria-hidden="true"></span>
+      <span id="start-label">START</span>
+    </button>
     <button id="fwd-btn" class="nudge" aria-label="Move timer forward one second">&rarr;</button>
   </div>
 </main>
@@ -57,6 +60,7 @@
     </div>
     <label class="row"><input type="checkbox" id="opt-awake" checked> Keep screen on</label>
     <label class="row"><input type="checkbox" id="opt-nudge" checked> Show timer sync arrows</label>
+    <label class="row"><input type="checkbox" id="opt-hold-reset" checked> Hold to reset</label>
     <label class="row"><input type="checkbox" id="opt-credit-toggle" checked> Show credits on main screen</label>
     <fieldset class="opt-group">
       <legend>Voice</legend>

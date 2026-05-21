@@ -99,10 +99,10 @@ spawn on every line of it.
 - The timer is driven by wall-clock timestamps (`Date.now()`), not a tick
   counter — `tick()` runs every 200ms and re-derives state, so a throttled
   or slept tab catches up correctly instead of drifting.
-- Settings (voice, cue toggles, keep-awake, sync-arrows, credit) persist to
-  `localStorage` under the `STORE` key; `parseSettings()` in `settings.js`
-  reads them back defensively, and a breaking shape change is handled by
-  bumping the key's version suffix.
+- Settings (voice, cue toggles, keep-awake, sync-arrows, credit,
+  hold-to-reset) persist to `localStorage` under the `STORE` key;
+  `parseSettings()` in `settings.js` reads them back defensively, and a
+  breaking shape change is handled by bumping the key's version suffix.
 - Audio uses the Web Audio API (decoded `AudioBuffer`s), not `<audio>`
   elements, so cues can be cut off mid-playback (`stopCue`) on nudge/reset.
 - Released changes bump `APP_VERSION` and `APP_UPDATED` in `app.js`.

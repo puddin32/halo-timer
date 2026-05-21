@@ -17,6 +17,7 @@ const DEFAULTS = {
   keepAwake: true,
   nudge: true,
   showCredit: true,
+  holdToReset: true,
   cues: { n50: true, n40: true, n30: true, n20: true, final: true },
 };
 
@@ -40,6 +41,7 @@ function parseSettings(raw, defaults) {
   if (typeof p.keepAwake === 'boolean') s.keepAwake = p.keepAwake;
   if (typeof p.nudge === 'boolean') s.nudge = p.nudge;
   if (typeof p.showCredit === 'boolean') s.showCredit = p.showCredit;
+  if (typeof p.holdToReset === 'boolean') s.holdToReset = p.holdToReset;
   if (p.cues && typeof p.cues === 'object') {
     for (const k of Object.keys(s.cues)) {
       if (typeof p.cues[k] === 'boolean') s.cues[k] = p.cues[k];

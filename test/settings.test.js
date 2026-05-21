@@ -67,3 +67,10 @@ test('parseSettings: an older blob missing fields fills the gaps from defaults',
   assert.equal(s.showCredit, DEFAULTS.showCredit);
   assert.deepEqual(s.cues, DEFAULTS.cues);
 });
+
+test('parseSettings: holdToReset overrides when boolean, falls back otherwise', () => {
+  assert.equal(parseSettings('{"holdToReset":false}', DEFAULTS).holdToReset, false);
+  assert.equal(parseSettings('{"holdToReset":"no"}', DEFAULTS).holdToReset, DEFAULTS.holdToReset);
+  // An older blob predating the field keeps the default (on).
+  assert.equal(parseSettings('{"voice":"british_female"}', DEFAULTS).holdToReset, true);
+});

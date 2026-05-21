@@ -219,8 +219,35 @@ function render() {
 
   document.querySelector('.dial').classList.toggle('warning', running && remaining <= FINAL_AT && remaining > 0);
 
-  $('start-btn').textContent = running ? 'RESET' : 'START';
+  $('start-label').textContent = running
+    ? (settings.holdToReset ? 'HOLD TO RESET' : 'RESET')
+    : 'START';
   document.querySelector('.controls').classList.toggle('running', running);
+}
+
+/* ---------- hold-to-reset ---------- */
+// RESET is destructive mid-game, so by default it takes a ~1s hold rather
+// than a tap (ADR-0008). The fill animation in styles.css owns the hold
+// length; its `animationend` is what fires the reset, so a release before
+// the fill completes cancels the animation and the reset never runs.
+// `holdFired` swallows the click that trails a completed hold, so letting
+// go of the button does not immediately restart the timer.
+let holdFired = false;
+
+function beginHold() {
+  holdFired = false;
+  $('start-btn').classList.add('holding');
+}
+
+function cancelHold() {
+  $('start-btn').classList.remove('holding');
+}
+
+function completeHold() {
+  $('start-btn').classList.remove('holding');
+  holdFired = true;
+  if (navigator.vibrate) navigator.vibrate(20);
+  reset();
 }
 
 /* ---------- init ---------- */
@@ -229,6 +256,7 @@ function init() {
 
   $('opt-awake').checked = settings.keepAwake;
   $('opt-nudge').checked = settings.nudge;
+  $('opt-hold-reset').checked = settings.holdToReset;
   $('opt-credit-toggle').checked = settings.showCredit;
   $('version-line').textContent = APP_VERSION + ' · updated ' + APP_UPDATED;
   document.querySelector('.controls').classList.toggle('no-nudge', !settings.nudge);
@@ -247,7 +275,20 @@ function init() {
   $('ring').style.strokeDasharray = String(C);
   render();
 
-  $('start-btn').addEventListener('click', () => { running ? reset() : start(); });
+  $('start-btn').addEventListener('click', () => {
+    if (holdFired) { holdFired = false; return; }   // swallow the click trailing a completed hold
+    if (!running) { start(); return; }
+    if (!settings.holdToReset) reset();              // one-tap reset when hold-to-reset is off
+    // running + hold-to-reset on: the hold gesture resets; a plain tap does nothing
+  });
+  $('start-btn').addEventListener('pointerdown', () => {
+    if (running && settings.holdToReset) beginHold();
+  });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach((ev) => {
+    $('start-btn').addEventListener(ev, cancelHold);
+  });
+  $('reset-fill').addEventListener('animationend', completeHold);
+
   $('back-btn').addEventListener('click', () => nudge(1000));
   $('fwd-btn').addEventListener('click', () => nudge(-1000));
 
@@ -266,6 +307,12 @@ function init() {
     settings.nudge = e.target.checked;
     save();
     document.querySelector('.controls').classList.toggle('no-nudge', !settings.nudge);
+  });
+
+  $('opt-hold-reset').addEventListener('change', (e) => {
+    settings.holdToReset = e.target.checked;
+    save();
+    render();                                        // refresh the button label if running
   });
 
   $('opt-credit-toggle').addEventListener('change', (e) => {
