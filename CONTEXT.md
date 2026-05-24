@@ -92,10 +92,11 @@ spawn on every line of it.
 ## Conventions
 
 - Plain ES (`'use strict'`), no framework, no transpilation. The app is
-  module-free globals: the DOM-free timer logic (cycle arithmetic, the
-  cue schedule) in `timer-core.js`, DOM and audio wiring in `app.js`.
-  `timer-core.js` also has a guarded `module.exports` so `node --test`
-  can unit-test it — see ADR-0006.
+  module-free globals: the pure logic lives in `timer-core.js` (cycle
+  arithmetic + cue schedule), `voices.js` (voice-pack manifest) and
+  `settings.js` (settings contract); `app.js` does the DOM, audio and
+  event wiring. The three pure modules each carry a guarded
+  `module.exports` so `node --test` can unit-test them — see ADR-0006.
 - The timer is driven by wall-clock timestamps (`Date.now()`), not a tick
   counter — `tick()` runs every 200ms and re-derives state, so a throttled
   or slept tab catches up correctly instead of drifting.

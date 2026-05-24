@@ -14,8 +14,8 @@
  */
 
 const CYCLE = 60;                          // seconds per spawn cycle
-const APP_VERSION = 'v1.0';
-const APP_UPDATED = 'May 17, 2026';        // bump on each released change
+const APP_VERSION = 'v1.1';
+const APP_UPDATED = 'May 24, 2026';        // bump on each released change
 const RING_R = 88;
 const C = 2 * Math.PI * RING_R;            // ring circumference
 // NUMBER_CUES and FINAL_AT live in timer-core.js — the cue schedule owns
