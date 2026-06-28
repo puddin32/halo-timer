@@ -20,6 +20,18 @@ body {
   font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
   min-height: 100%;
   -webkit-tap-highlight-color: transparent;
+  /* Notch / Dynamic Island / home-indicator safety. index.html opts into
+     edge-to-edge with viewport-fit=cover and a translucent status bar, so
+     the dark gradient bleeds behind the hardware cutouts on purpose. These
+     insets push the *content* (app bar, dial, controls) back inside the
+     safe area. Padding lives on body so the gradient still fills the whole
+     screen (border-box) while only the content is inset — and it follows
+     the notch to a side edge when the phone is rotated (ADR-0010). */
+  padding:
+    env(safe-area-inset-top)
+    env(safe-area-inset-right)
+    env(safe-area-inset-bottom)
+    env(safe-area-inset-left);
 }
 
 .app-bar {
