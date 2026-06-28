@@ -14,7 +14,7 @@
  */
 
 const CYCLE = 60;                          // seconds per spawn cycle
-const APP_VERSION = 'v1.2';
+const APP_VERSION = 'v1.3';
 const APP_UPDATED = 'Jun 28, 2026';        // bump on each released change
 const RING_R = 88;
 const C = 2 * Math.PI * RING_R;            // ring circumference
