@@ -1,6 +1,6 @@
 importScripts('voices.js');                // VOICES + allClipPaths()
 
-const CACHE = 'halo1-timer-v5';
+const CACHE = 'halo1-timer-v6';
 const ASSETS = [
   './',
   './index.html',
