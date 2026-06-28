@@ -43,6 +43,12 @@ The insets are applied as `padding` on `body`:
 On a device with no cutouts the `env()` values resolve to `0`, so this is
 inert everywhere except where it is needed.
 
+One wrinkle: the backdrop is a radial-gradient — a background *image* — and
+iOS fills the home-indicator safe-area band (and overscroll) with the
+background *color*, not the image, which defaults to white. So `html` is
+painted a solid `var(--bg-2)` (the gradient's bottom stop) as a base layer
+behind everything, keeping that band dark and seamless with the gradient.
+
 ## Consequences
 
 - The app is usable installed on notched iPhones; the chrome no longer

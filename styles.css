@@ -14,6 +14,13 @@
 
 html, body { margin: 0; height: 100%; }
 
+/* Solid dark base for the whole screen canvas. The body backdrop is a
+   radial-gradient — a background *image* — and iOS fills the home-indicator
+   safe-area band (and any overscroll) with the background *color*, which
+   would default to white. Painting html the gradient's bottom stop keeps
+   that band dark and seamless (ADR-0010). */
+html { background-color: var(--bg-2); }
+
 body {
   background: radial-gradient(120% 80% at 50% 0%, #16273e 0%, var(--bg) 55%, var(--bg-2) 100%);
   color: var(--text);
